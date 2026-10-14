@@ -475,7 +475,7 @@ window.handlePosPhoneInput = function(phoneVal) {
                 item.innerHTML = `
                     <div><strong>${c.name}</strong> • ${c.phone}</div>
                     <span class="badge ${loyalty.isEligible ? 'badge-success' : 'badge-warning'}">
-                        ${loyalty.isEligible ? 'Eligible for Free Cup!' : `${loyalty.currentCycleProgress}/${loyalty.threshold} Cups`}
+                        ${loyalty.isEligible ? 'Eligible for Free Cup!' : `${loyalty.currentCycleProgress}/${loyalty.threshold} Purchases`}
                     </span>
                 `;
                 item.onclick = () => selectPosCustomer(c);
@@ -519,7 +519,7 @@ function checkPosLoyaltyEligibility(phone) {
     const loyalty = window.TiraDB.getCustomerLoyalty(phone);
     if (loyalty.isEligible) {
         alertTitle.textContent = `${loyalty.customer.name} is Eligible for 1 Free 150g Cup!`;
-        alertDesc.textContent = `Total paid cups: ${loyalty.totalEligibleCups}. Customer has ${loyalty.availableRewards} unclaimed reward(s).`;
+        alertDesc.textContent = `Completed purchases: ${loyalty.completedPurchasesCount} (${loyalty.totalCupsPurchased} cups total). Customer has ${loyalty.availableRewards} unclaimed reward(s).`;
         alertBox.classList.add('active');
     } else {
         alertBox.classList.remove('active');
@@ -613,11 +613,11 @@ window.viewReceipt = function(saleId) {
     const loyaltyNote = document.getElementById('recLoyaltyNote');
     const rewardName = settings.rewardItemName || '1 Free 150g Tiramisu';
     if (loyalty.isEligible) {
-        loyaltyStatus.textContent = `Loyalty Progress: ${loyalty.threshold} / ${loyalty.threshold} Cups (Eligible!)`;
+        loyaltyStatus.textContent = `Loyalty Progress: ${loyalty.threshold} / ${loyalty.threshold} Purchases (Eligible!)`;
         loyaltyNote.textContent = `Customer is eligible for ${rewardName}!`;
     } else {
-        loyaltyStatus.textContent = `Loyalty Progress: ${loyalty.currentCycleProgress} / ${loyalty.threshold} Cups`;
-        loyaltyNote.textContent = `${loyalty.purchasesRemaining} more cup(s) to unlock your free reward!`;
+        loyaltyStatus.textContent = `Loyalty Progress: ${loyalty.currentCycleProgress} / ${loyalty.threshold} Purchases`;
+        loyaltyNote.textContent = `${loyalty.purchasesRemaining} more purchase(s) to unlock your free reward!`;
     }
 
     document.getElementById('receiptModal').classList.add('active');
@@ -892,7 +892,7 @@ window.renderCustomersTable = function() {
             };
             emptyMsg = `No customers found for filter: <strong>${filterLabelMap[activeCustomerFilter] || activeCustomerFilter}</strong>.`;
         }
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--color-text-muted); padding: 24px;">${emptyMsg}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--color-text-muted); padding: 24px;">${emptyMsg}</td></tr>`;
         return;
     }
 
@@ -907,11 +907,12 @@ window.renderCustomersTable = function() {
         tr.innerHTML = `
             <td><strong>${safeName}</strong></td>
             <td><code>${safePhone}</code></td>
-            <td><strong>${loyalty.totalEligibleCups} cups</strong></td>
+            <td><strong>${loyalty.totalCupsPurchased} cups</strong></td>
+            <td><strong>${loyalty.completedPurchasesCount} orders</strong></td>
             <td><strong>${curr}${totalSpend.toLocaleString('en-IN')}</strong></td>
             <td>
                 <span class="badge ${loyalty.isEligible ? 'badge-success' : 'badge-warning'}">
-                    ${loyalty.isEligible ? 'Eligible for Free Reward' : `${loyalty.currentCycleProgress}/${loyalty.threshold} Cups`}
+                    ${loyalty.isEligible ? 'Eligible for Free Reward' : `${loyalty.currentCycleProgress}/${loyalty.threshold} Purchases`}
                 </span>
             </td>
             <td>
@@ -941,8 +942,10 @@ window.viewCustomerHistory = function(phone) {
 
     const totalSpend = loyalty.salesHistory.reduce((acc, s) => acc + s.totalAmount, 0);
     document.getElementById('custModalTotalSpend').textContent = `${curr}${totalSpend.toLocaleString('en-IN')}`;
-    document.getElementById('custModalPaidCups').textContent = `${loyalty.totalEligibleCups} Cups`;
-    document.getElementById('custModalStatus').textContent = loyalty.isEligible ? 'ELIGIBLE!' : `${loyalty.currentCycleProgress}/${loyalty.threshold}`;
+    document.getElementById('custModalPaidCups').textContent = `${loyalty.totalCupsPurchased} Cups`;
+    const purchasesElem = document.getElementById('custModalPurchases');
+    if (purchasesElem) purchasesElem.textContent = `${loyalty.completedPurchasesCount} Orders`;
+    document.getElementById('custModalStatus').textContent = loyalty.isEligible ? 'ELIGIBLE (Free Cup)' : `${loyalty.currentCycleProgress}/${loyalty.threshold} Purchases`;
 
     const list = document.getElementById('custModalTxnList');
     list.innerHTML = '';
@@ -980,13 +983,13 @@ window.exportCustomersCSV = function() {
     const sales = window.TiraDB.getSales();
 
     let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "Customer Name,Phone,Total Paid Cups,Total Spend (INR),Current Cycle Progress,Threshold,Eligible For Free Reward,Total Rewards Claimed\n";
+    csvContent += "Customer Name,Phone,Total Cups Purchased,Completed Purchases,Total Spend (INR),Current Cycle Progress,Threshold,Eligible For Free Reward,Total Rewards Claimed\n";
 
     customers.forEach(c => {
         const loyalty = window.TiraDB.getCustomerLoyalty(c.phone);
         const custSales = sales.filter(s => s.customerPhone === c.phone);
         const totalSpend = custSales.reduce((acc, s) => acc + s.totalAmount, 0);
-        csvContent += `"${c.name}","${c.phone}",${loyalty.totalEligibleCups},${totalSpend},${loyalty.currentCycleProgress},${loyalty.threshold},${loyalty.isEligible ? 'YES' : 'NO'},${loyalty.claimedCount}\n`;
+        csvContent += `"${c.name}","${c.phone}",${loyalty.totalCupsPurchased},${loyalty.completedPurchasesCount},${totalSpend},${loyalty.currentCycleProgress},${loyalty.threshold},${loyalty.isEligible ? 'YES' : 'NO'},${loyalty.claimedCount}\n`;
     });
 
     const encodedUri = encodeURI(csvContent);
@@ -1044,7 +1047,7 @@ function renderAdminLoyaltyCard(phone) {
         actionContainer.innerHTML = `
             <button class="btn btn-outline" disabled style="opacity: 0.6; cursor: not-allowed; display: inline-flex; align-items: center; gap: 8px;">
                 <i data-lucide="lock" data-size="16"></i>
-                <span>Not Eligible (Needs ${loyalty.purchasesRemaining} more cups)</span>
+                <span>Not Eligible (Needs ${loyalty.purchasesRemaining} more purchase${loyalty.purchasesRemaining !== 1 ? 's' : ''})</span>
             </button>
         `;
     }
@@ -1059,12 +1062,12 @@ function renderAdminLoyaltyCard(phone) {
         statusBox.className = 'loyalty-status-banner status-eligible';
         icon.innerHTML = '<i data-lucide="award" data-size="28"></i>';
         title.textContent = `Eligible for ${window.TiraDB.getSettings().rewardItemName || 'Free 150g Tiramisu'}!`;
-        desc.textContent = `Customer completed all ${loyalty.threshold} cups! Click the button above to record the free dessert redemption.`;
+        desc.textContent = `Customer completed ${loyalty.completedPurchasesCount} purchase transactions (reached ${loyalty.threshold} required)! Click the button above to record the free dessert redemption.`;
     } else {
         statusBox.className = 'loyalty-status-banner status-in-progress';
         icon.innerHTML = '<i data-lucide="coffee" data-size="28"></i>';
-        title.textContent = `${loyalty.purchasesRemaining} Cups Remaining`;
-        desc.textContent = `Customer has purchased ${loyalty.currentCycleProgress} out of ${loyalty.threshold} cups in the current reward cycle.`;
+        title.textContent = `${loyalty.purchasesRemaining} Purchase${loyalty.purchasesRemaining !== 1 ? 's' : ''} Remaining`;
+        desc.textContent = `Customer has completed ${loyalty.currentCycleProgress} out of ${loyalty.threshold} purchases in the current reward cycle (${loyalty.totalCupsPurchased} cups bought total).`;
     }
 
     // Stamps Visual
@@ -1092,13 +1095,15 @@ function renderAdminLoyaltyCard(phone) {
 
         box.innerHTML = `
             <div class="stamp-img">${stampIconHtml}</div>
-            <div class="stamp-num-badge">${isFinal ? 'FREE CUP' : `Cup #${i}`}</div>
+            <div class="stamp-num-badge">${isFinal ? 'FREE CUP' : `Purchase #${i}`}</div>
         `;
         stampsGrid.appendChild(box);
     }
 
     // Stats
-    document.getElementById('admResTotalCups').textContent = loyalty.totalEligibleCups;
+    document.getElementById('admResTotalCups').textContent = loyalty.totalCupsPurchased;
+    const admResPurchases = document.getElementById('admResCompletedPurchases');
+    if (admResPurchases) admResPurchases.textContent = loyalty.completedPurchasesCount;
     document.getElementById('admResNeededCups').textContent = loyalty.purchasesRemaining;
     document.getElementById('admResClaimedCount').textContent = loyalty.claimedCount;
 

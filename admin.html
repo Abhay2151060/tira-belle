@@ -499,7 +499,8 @@
                                 <tr>
                                     <th>Customer Name</th>
                                     <th>Phone Number</th>
-                                    <th>Total Paid Cups</th>
+                                    <th>Total Cups</th>
+                                    <th>Purchases</th>
                                     <th>Total Spent</th>
                                     <th>Loyalty Progress</th>
                                     <th>Rewards Claimed</th>
@@ -562,11 +563,15 @@
                         <div class="stats-tiles" style="margin-bottom: 24px;">
                             <div class="stat-tile">
                                 <div class="stat-tile-val" id="admResTotalCups">0</div>
-                                <div class="stat-tile-label">Eligible Paid Cups</div>
+                                <div class="stat-tile-label">Total Cups Bought</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="stat-tile-val" id="admResCompletedPurchases">0</div>
+                                <div class="stat-tile-label">Completed Purchases</div>
                             </div>
                             <div class="stat-tile">
                                 <div class="stat-tile-val" id="admResNeededCups">0</div>
-                                <div class="stat-tile-label">Cups Remaining</div>
+                                <div class="stat-tile-label">Purchases Needed</div>
                             </div>
                             <div class="stat-tile">
                                 <div class="stat-tile-val" id="admResClaimedCount">0</div>
@@ -834,11 +839,15 @@
                     </div>
                     <div class="stat-tile">
                         <div class="stat-tile-val" id="custModalPaidCups">0</div>
-                        <div class="stat-tile-label">Paid Cups</div>
+                        <div class="stat-tile-label">Total Cups</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-val" id="custModalPurchases">0</div>
+                        <div class="stat-tile-label">Purchases Made</div>
                     </div>
                     <div class="stat-tile">
                         <div class="stat-tile-val" id="custModalStatus">0/5</div>
-                        <div class="stat-tile-label">Loyalty Status</div>
+                        <div class="stat-tile-label">Loyalty Progress</div>
                     </div>
                 </div>
 
@@ -914,10 +923,10 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/icons.js"></script>
-    <script src="js/qrcode.min.js"></script>
-    <script src="js/db.js"></script>
-    <script src="js/admin.js"></script>
-    <script src="js/pwa.js"></script>
+    <script src="js/icons.js?v=3"></script>
+    <script src="js/qrcode.min.js?v=3"></script>
+    <script src="js/db.js?v=3"></script>
+    <script src="js/admin.js?v=3"></script>
+    <script src="js/pwa.js?v=3"></script>
 </body>
 </html>

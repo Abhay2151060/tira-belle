@@ -82,16 +82,19 @@ async function runAllTests() {
     console.log("\n--- Suite 2: Loyalty Business Rules Engine ---");
     
     // Pure calculation helper matching TiraBelleDB.getCustomerLoyalty
-    function calculateLoyalty(totalEligibleCups, claimedCount, threshold = 5) {
-        const totalEarnedRewards = Math.floor(totalEligibleCups / threshold);
+    function calculateLoyalty(completedPurchasesCount, claimedCount, threshold = 5, totalCupsPurchased = null) {
+        if (totalCupsPurchased === null) totalCupsPurchased = completedPurchasesCount;
+        const totalEarnedRewards = Math.floor(completedPurchasesCount / threshold);
         const availableRewards = Math.max(0, totalEarnedRewards - claimedCount);
         const isEligible = availableRewards > 0;
-        const currentCycleProgress = totalEligibleCups % threshold;
+        const purchasesSinceClaimed = Math.max(0, completedPurchasesCount - (claimedCount * threshold));
+        const currentCycleProgress = isEligible ? threshold : (purchasesSinceClaimed % threshold);
         const purchasesRemaining = isEligible ? 0 : (threshold - currentCycleProgress);
 
         return {
             threshold,
-            totalEligibleCups,
+            totalCupsPurchased,
+            completedPurchasesCount,
             totalEarnedRewards,
             claimedCount,
             availableRewards,
@@ -113,36 +116,47 @@ async function runAllTests() {
     assert(l3.currentCycleProgress === 3, 'Progress is 3/5');
     assert(l3.purchasesRemaining === 2, 'Needs 2 more purchases');
 
-    // Case 3: Customer with exactly 5 purchases (Eligible for 1 reward)
-    const l5 = calculateLoyalty(5, 0, 5);
+    // Case 3: Multi-cup single transaction (e.g. bought 4 cups in 1 order) counts as 1 purchase
+    const lMulti = calculateLoyalty(1, 0, 5, 4);
+    assert(lMulti.totalCupsPurchased === 4, 'Total cups is 4');
+    assert(lMulti.completedPurchasesCount === 1, 'Only 1 completed purchase counted');
+    assert(lMulti.isEligible === false, 'Not eligible with 1 transaction');
+    assert(lMulti.currentCycleProgress === 1, 'Progress is 1/5 purchases');
+
+    // Case 4: Customer with 5 completed purchases (Jay: 8 cups bought across 5 txns, Eligible for 1 reward, 0 claimed)
+    const l5 = calculateLoyalty(5, 0, 5, 8);
     assert(l5.isEligible === true, 'Customer with 5 purchases is eligible');
     assert(l5.availableRewards === 1, 'Has 1 available reward');
+    assert(l5.claimedCount === 0, '0 claimed rewards');
     assert(l5.purchasesRemaining === 0, 'Needs 0 more purchases');
+    assert(l5.currentCycleProgress === 5, 'All 5 stamps filled');
 
-    // Case 4: Customer with 5 purchases who has claimed their reward
-    const l5Claimed = calculateLoyalty(5, 1, 5);
+    // Case 5: Customer after redeeming free reward (Jay redeems reward: claimed becomes 1, progress resets to 0/5)
+    const l5Claimed = calculateLoyalty(5, 1, 5, 8);
     assert(l5Claimed.isEligible === false, 'Claimed reward resets eligibility');
     assert(l5Claimed.availableRewards === 0, '0 available rewards left');
-    assert(l5Claimed.currentCycleProgress === 0, 'New cycle is at 0/5');
+    assert(l5Claimed.claimedCount === 1, '1 claimed reward');
+    assert(l5Claimed.currentCycleProgress === 0, 'New cycle resets to 0/5');
     assert(l5Claimed.purchasesRemaining === 5, 'Needs 5 more purchases for cycle 2');
 
-    // Case 5: Customer with 7 purchases, 1 claimed (Rahul scenario: 2 cups into second cycle)
-    const l7 = calculateLoyalty(7, 1, 5);
+    // Case 6: Customer with 7 purchases, 1 claimed (Rahul scenario: 12 cups bought across 7 txns -> 2/5 progress toward reward 2)
+    const l7 = calculateLoyalty(7, 1, 5, 12);
     assert(l7.isEligible === false, 'Cycle 2 at 2/5 is not eligible yet');
-    assert(l7.currentCycleProgress === 2, 'Cycle 2 progress is 2/5');
+    assert(l7.claimedCount === 1, '1 free cup claimed');
+    assert(l7.currentCycleProgress === 2, 'Cycle 2 progress is 2/5 purchases');
     assert(l7.purchasesRemaining === 3, 'Needs 3 more purchases for reward 2');
 
-    // Case 6: Dynamic threshold changed to 4 cups
-    const l7Thresh4 = calculateLoyalty(7, 1, 4);
-    assert(l7Thresh4.threshold === 4, 'Threshold is 4');
-    assert(l7Thresh4.totalEarnedRewards === 1, 'Floor(7/4) = 1 reward earned');
-    assert(l7Thresh4.availableRewards === 0, '1 - 1 claimed = 0 available');
-    assert(l7Thresh4.currentCycleProgress === 3, '7 % 4 = 3 cups');
-    assert(l7Thresh4.purchasesRemaining === 1, 'Needs 1 more purchase');
+    // Case 7: Dynamic threshold changed to 6 purchases
+    const l7Thresh6 = calculateLoyalty(7, 1, 6, 12);
+    assert(l7Thresh6.threshold === 6, 'Threshold is 6');
+    assert(l7Thresh6.totalEarnedRewards === 1, 'Floor(7/6) = 1 reward earned');
+    assert(l7Thresh6.availableRewards === 0, '1 - 1 claimed = 0 available');
+    assert(l7Thresh6.currentCycleProgress === 1, '7 - 6 = 1 purchase into cycle 2');
+    assert(l7Thresh6.purchasesRemaining === 5, 'Needs 5 more purchases at threshold 6');
 
-    // Case 7: Customer bought 10 cups at once with threshold 5
-    const l10 = calculateLoyalty(10, 0, 5);
-    assert(l10.totalEarnedRewards === 2, '10 cups earns 2 rewards');
+    // Case 8: Customer completed 10 separate purchases with threshold 5
+    const l10 = calculateLoyalty(10, 0, 5, 15);
+    assert(l10.totalEarnedRewards === 2, '10 purchases earns 2 rewards');
     assert(l10.availableRewards === 2, 'Both rewards available to claim');
     assert(l10.isEligible === true, 'Eligible is true');
 

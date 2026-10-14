@@ -149,8 +149,8 @@
                 <div id="resStatusBanner" class="loyalty-status-banner status-in-progress">
                     <div class="status-icon-box" id="resStatusIcon"><i data-lucide="coffee" data-size="28"></i></div>
                     <div class="status-details">
-                        <h3 id="resStatusTitle">2 More Cups To Go!</h3>
-                        <p id="resStatusDesc">You have purchased 3 eligible cups. Buy 2 more to claim your free 150g tiramisu!</p>
+                        <h3 id="resStatusTitle">2 More Purchases To Go!</h3>
+                        <p id="resStatusDesc">You have completed 3 purchases. Complete 2 more to claim your free 150g tiramisu!</p>
                     </div>
                 </div>
 
@@ -161,7 +161,7 @@
                             Your Digital Loyalty Card
                         </h4>
                         <span style="font-size: 0.85rem; font-weight: 700; color: var(--color-caramel);" id="resStampFraction">
-                            3 / 5 Cups
+                            3 / 5 Purchases
                         </span>
                     </div>
                     
@@ -170,7 +170,7 @@
                     </div>
                     
                     <p style="text-align: center; font-size: 0.8rem; color: var(--color-text-muted); margin-top: 4px;">
-                        *Each 150g or 350g paid tiramisu cup counts as 1 stamp. Free reward cups do not count toward next stamp.
+                        *Each separate purchase transaction earns 1 stamp toward your free reward. Free reward cups do not count toward the next stamp.
                     </p>
                 </div>
 
@@ -181,8 +181,12 @@
                         <div class="stat-tile-label">Total Cups Bought</div>
                     </div>
                     <div class="stat-tile">
+                        <div class="stat-tile-val" id="resPurchasesMade">3</div>
+                        <div class="stat-tile-label">Purchases Made</div>
+                    </div>
+                    <div class="stat-tile">
                         <div class="stat-tile-val" id="resRemainingCups">2</div>
-                        <div class="stat-tile-label">Cups Needed</div>
+                        <div class="stat-tile-label">Purchases Needed</div>
                     </div>
                     <div class="stat-tile">
                         <div class="stat-tile-val" id="resClaimedRewards">0</div>
@@ -230,10 +234,10 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/icons.js"></script>
-    <script src="js/pwa.js"></script>
-    <script src="js/db.js"></script>
-    <script src="js/tracker.js"></script>
+    <script src="js/icons.js?v=3"></script>
+    <script src="js/pwa.js?v=3"></script>
+    <script src="js/db.js?v=3"></script>
+    <script src="js/tracker.js?v=3"></script>
     <script>
         function fillAndSearch(query) {
             document.getElementById('trackerInput').value = query;

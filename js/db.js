@@ -122,8 +122,13 @@ const DEFAULT_CUSTOMERS = [
 ];
 
 // Seed sample sales matching the user prompt scenario
+// Seed sample sales matching the user prompt scenario:
+// Jay: 5 completed purchase transactions (Total 8 cups bought, eligible for free reward!)
+// Priya: 3 completed purchase transactions (3/5 purchases, 0 claimed)
+// Rahul: 7 completed purchase transactions (12 cups total; 1 claimed reward -> 2/5 progress toward reward 2)
+// Aisha: 1 completed purchase transaction (1/5 purchases, 0 claimed)
 const DEFAULT_SALES = [
-    // Jay's history: 1 cup (Sept 15), 2 cups (Oct 02), 2 cups today (Oct 14) -> Total 5 cups! Eligible!
+    // --- Jay's 5 Transactions ---
     {
         id: 'TXN-1001',
         customerPhone: '9876543210',
@@ -138,7 +143,7 @@ const DEFAULT_SALES = [
         paidCupsCount: 1,
         timestamp: '2026-09-15T11:25:00.000Z',
         date: '2026-09-15',
-        notes: 'First visit, loved the cocoa flavor'
+        notes: 'First purchase'
     },
     {
         id: 'TXN-1002',
@@ -152,9 +157,9 @@ const DEFAULT_SALES = [
         totalAmount: 440,
         paymentMode: 'Cash',
         paidCupsCount: 2,
-        timestamp: '2026-10-02T15:10:00.000Z',
-        date: '2026-10-02',
-        notes: 'Bought for family'
+        timestamp: '2026-09-22T15:10:00.000Z',
+        date: '2026-09-22',
+        notes: 'Second purchase'
     },
     {
         id: 'TXN-1003',
@@ -168,67 +173,154 @@ const DEFAULT_SALES = [
         totalAmount: 300,
         paymentMode: 'Online',
         paidCupsCount: 2,
-        timestamp: new Date().toISOString(),
-        date: getTodayDateString(0),
-        notes: 'Reached 5 cups! Eligible for reward.'
+        timestamp: '2026-10-01T14:20:00.000Z',
+        date: '2026-10-01',
+        notes: 'Third purchase'
     },
-
-    // Priya Sharma: 3 cups total (3/5)
     {
         id: 'TXN-1004',
-        customerPhone: '9822012345',
-        customerName: 'Priya Sharma',
+        customerPhone: '9876543210',
+        customerName: 'Jay',
         items: [
-            { productId: 'prod-150', productName: 'Tiramisu – 150 g', price: 150, quantity: 1, isReward: false },
-            { productId: 'prod-350', productName: 'Tiramisu – 350 g', price: 220, quantity: 2, isReward: false }
+            { productId: 'prod-150', productName: 'Tiramisu – 150 g', price: 150, quantity: 1, isReward: false }
         ],
-        subtotal: 590,
+        subtotal: 150,
         discount: 0,
-        totalAmount: 590,
+        totalAmount: 150,
         paymentMode: 'Online',
-        paidCupsCount: 3,
-        timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
-        date: getTodayDateString(0),
-        notes: 'Office dessert'
+        paidCupsCount: 1,
+        timestamp: '2026-10-08T16:00:00.000Z',
+        date: '2026-10-08',
+        notes: 'Fourth purchase'
     },
-
-    // Rahul Verma: Past completed 5 cups, claimed 1 reward, now bought 2 more cups (2/5)
     {
         id: 'TXN-1005',
-        customerPhone: '9845098765',
-        customerName: 'Rahul Verma',
-        items: [
-            { productId: 'prod-150', productName: 'Tiramisu – 150 g', price: 150, quantity: 5, isReward: false }
-        ],
-        subtotal: 750,
-        discount: 0,
-        totalAmount: 750,
-        paymentMode: 'Cash',
-        paidCupsCount: 5,
-        timestamp: '2026-09-20T17:30:00.000Z',
-        date: '2026-09-20',
-        notes: 'Party order'
-    },
-    {
-        id: 'TXN-1006',
-        customerPhone: '9845098765',
-        customerName: 'Rahul Verma',
+        customerPhone: '9876543210',
+        customerName: 'Jay',
         items: [
             { productId: 'prod-350', productName: 'Tiramisu – 350 g', price: 220, quantity: 2, isReward: false }
         ],
         subtotal: 440,
         discount: 0,
         totalAmount: 440,
-        paymentMode: 'Online',
+        paymentMode: 'Cash',
         paidCupsCount: 2,
-        timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+        timestamp: new Date().toISOString(),
         date: getTodayDateString(0),
-        notes: 'Continuing second loyalty cycle'
+        notes: 'Fifth purchase! Reached 5 completed transactions, eligible for reward!'
     },
 
-    // Aisha Patel: 1 cup today (1/5)
+    // --- Priya Sharma: 3 Transactions ---
+    {
+        id: 'TXN-1006',
+        customerPhone: '9822012345',
+        customerName: 'Priya Sharma',
+        items: [
+            { productId: 'prod-150', productName: 'Tiramisu – 150 g', price: 150, quantity: 1, isReward: false }
+        ],
+        subtotal: 150,
+        discount: 0,
+        totalAmount: 150,
+        paymentMode: 'Online',
+        paidCupsCount: 1,
+        timestamp: '2026-10-02T14:30:00.000Z',
+        date: '2026-10-02',
+        notes: 'First purchase'
+    },
     {
         id: 'TXN-1007',
+        customerPhone: '9822012345',
+        customerName: 'Priya Sharma',
+        items: [
+            { productId: 'prod-350', productName: 'Tiramisu – 350 g', price: 220, quantity: 1, isReward: false }
+        ],
+        subtotal: 220,
+        discount: 0,
+        totalAmount: 220,
+        paymentMode: 'Online',
+        paidCupsCount: 1,
+        timestamp: '2026-10-07T17:00:00.000Z',
+        date: '2026-10-07',
+        notes: 'Second purchase'
+    },
+    {
+        id: 'TXN-1008',
+        customerPhone: '9822012345',
+        customerName: 'Priya Sharma',
+        items: [
+            { productId: 'prod-150', productName: 'Tiramisu – 150 g', price: 150, quantity: 1, isReward: false }
+        ],
+        subtotal: 150,
+        discount: 0,
+        totalAmount: 150,
+        paymentMode: 'Cash',
+        paidCupsCount: 1,
+        timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
+        date: getTodayDateString(0),
+        notes: 'Third purchase (3/5)'
+    },
+
+    // --- Rahul Verma: 7 Transactions (Claimed 1 reward, now at 2/5 toward next reward) ---
+    {
+        id: 'TXN-1009',
+        customerPhone: '9845098765',
+        customerName: 'Rahul Verma',
+        items: [{ productId: 'prod-150', productName: 'Tiramisu – 150 g', price: 150, quantity: 2, isReward: false }],
+        subtotal: 300, discount: 0, totalAmount: 300, paymentMode: 'Cash', paidCupsCount: 2,
+        timestamp: '2026-09-02T11:00:00.000Z', date: '2026-09-02', notes: 'Txn 1'
+    },
+    {
+        id: 'TXN-1010',
+        customerPhone: '9845098765',
+        customerName: 'Rahul Verma',
+        items: [{ productId: 'prod-150', productName: 'Tiramisu – 150 g', price: 150, quantity: 1, isReward: false }],
+        subtotal: 150, discount: 0, totalAmount: 150, paymentMode: 'Cash', paidCupsCount: 1,
+        timestamp: '2026-09-07T12:00:00.000Z', date: '2026-09-07', notes: 'Txn 2'
+    },
+    {
+        id: 'TXN-1011',
+        customerPhone: '9845098765',
+        customerName: 'Rahul Verma',
+        items: [{ productId: 'prod-350', productName: 'Tiramisu – 350 g', price: 220, quantity: 2, isReward: false }],
+        subtotal: 440, discount: 0, totalAmount: 440, paymentMode: 'Online', paidCupsCount: 2,
+        timestamp: '2026-09-12T15:00:00.000Z', date: '2026-09-12', notes: 'Txn 3'
+    },
+    {
+        id: 'TXN-1012',
+        customerPhone: '9845098765',
+        customerName: 'Rahul Verma',
+        items: [{ productId: 'prod-150', productName: 'Tiramisu – 150 g', price: 150, quantity: 1, isReward: false }],
+        subtotal: 150, discount: 0, totalAmount: 150, paymentMode: 'Cash', paidCupsCount: 1,
+        timestamp: '2026-09-17T18:00:00.000Z', date: '2026-09-17', notes: 'Txn 4'
+    },
+    {
+        id: 'TXN-1013',
+        customerPhone: '9845098765',
+        customerName: 'Rahul Verma',
+        items: [{ productId: 'prod-150', productName: 'Tiramisu – 150 g', price: 150, quantity: 2, isReward: false }],
+        subtotal: 300, discount: 0, totalAmount: 300, paymentMode: 'Online', paidCupsCount: 2,
+        timestamp: '2026-09-21T19:00:00.000Z', date: '2026-09-21', notes: 'Txn 5 (Completed 5 txns! Claimed reward on Sept 22)'
+    },
+    {
+        id: 'TXN-1014',
+        customerPhone: '9845098765',
+        customerName: 'Rahul Verma',
+        items: [{ productId: 'prod-150', productName: 'Tiramisu – 150 g', price: 150, quantity: 2, isReward: false }],
+        subtotal: 300, discount: 0, totalAmount: 300, paymentMode: 'Cash', paidCupsCount: 2,
+        timestamp: '2026-10-01T16:30:00.000Z', date: '2026-10-01', notes: 'Txn 6 (Cycle 2, 1/5)'
+    },
+    {
+        id: 'TXN-1015',
+        customerPhone: '9845098765',
+        customerName: 'Rahul Verma',
+        items: [{ productId: 'prod-350', productName: 'Tiramisu – 350 g', price: 220, quantity: 2, isReward: false }],
+        subtotal: 440, discount: 0, totalAmount: 440, paymentMode: 'Online', paidCupsCount: 2,
+        timestamp: new Date(Date.now() - 3600000 * 2).toISOString(), date: getTodayDateString(0), notes: 'Txn 7 (Cycle 2, 2/5)'
+    },
+
+    // --- Aisha Patel: 1 Transaction ---
+    {
+        id: 'TXN-1016',
         customerPhone: '9765432109',
         customerName: 'Aisha Patel',
         items: [
@@ -241,7 +333,7 @@ const DEFAULT_SALES = [
         paidCupsCount: 1,
         timestamp: new Date(Date.now() - 3600000 * 1).toISOString(),
         date: getTodayDateString(0),
-        notes: 'First time visitor'
+        notes: 'First purchase'
     }
 ];
 
@@ -286,12 +378,24 @@ class TiraBelleDB {
                         this.save();
                     });
                 }
+                // If stored sales has legacy demo records (where Jay had fewer than 5 transactions or Rahul had fewer than 7),
+                // automatically synchronize to the corrected transaction dataset
+                let currentSales = parsed.sales || DEFAULT_SALES;
+                const jaySales = currentSales.filter(s => (s.customerPhone || '').replace(/\D/g, '') === '9876543210');
+                const rahulSales = currentSales.filter(s => (s.customerPhone || '').replace(/\D/g, '') === '9845098765');
+                if (jaySales.length < 5 || rahulSales.length < 7 || currentSales.length <= 8) {
+                    currentSales = [...DEFAULT_SALES];
+                    try {
+                        const updated = { ...parsed, sales: currentSales };
+                        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updated));
+                    } catch (e) {}
+                }
 
                 return {
                     settings: settings,
                     products: parsed.products && parsed.products.length ? parsed.products : DEFAULT_PRODUCTS,
                     customers: parsed.customers || DEFAULT_CUSTOMERS,
-                    sales: parsed.sales || DEFAULT_SALES,
+                    sales: currentSales,
                     redemptions: parsed.redemptions || DEFAULT_REDEMPTIONS
                 };
             }
@@ -469,36 +573,45 @@ class TiraBelleDB {
         const threshold = parseInt(this.data.settings.loyaltyThreshold, 10) || 5;
 
         // Customer's sales
-        const customerSales = this.data.sales.filter(s => s.customerPhone.replace(/\D/g, '') === cleanPhone);
+        const customerSales = this.data.sales.filter(s => (s.customerPhone || '').replace(/\D/g, '') === cleanPhone);
 
-        // Calculate total eligible paid purchases (excluding free reward items)
-        let totalEligibleCups = 0;
+        // Separate Metrics:
+        // 1. Total Paid Cups Purchased (quantity across all orders)
+        let totalCupsPurchased = 0;
+        // 2. Completed Eligible Purchase Transactions (each transaction with at least 1 paid item counts as 1 purchase)
+        let completedPurchasesCount = 0;
+
         customerSales.forEach(sale => {
-            totalEligibleCups += (sale.paidCupsCount || 0);
+            const cupsInSale = (sale.paidCupsCount || 0);
+            totalCupsPurchased += cupsInSale;
+            if (cupsInSale > 0 || (sale.items && sale.items.some(it => !it.isReward))) {
+                completedPurchasesCount += 1;
+            }
         });
 
         // Total rewards claimed
-        const customerRedemptions = this.data.redemptions.filter(r => r.customerPhone.replace(/\D/g, '') === cleanPhone);
+        const customerRedemptions = this.data.redemptions.filter(r => (r.customerPhone || '').replace(/\D/g, '') === cleanPhone);
         const claimedCount = customerRedemptions.length;
 
-        // Total lifetime rewards earned
-        const totalEarnedRewards = Math.floor(totalEligibleCups / threshold);
+        // Total lifetime rewards earned based on completed separate purchase transactions
+        const totalEarnedRewards = Math.floor(completedPurchasesCount / threshold);
 
         // Available rewards that can be redeemed right now
         const availableRewards = Math.max(0, totalEarnedRewards - claimedCount);
-
-        // Progress toward current or next reward
-        // If they have unclaimed rewards, current cycle is completed (threshold / threshold)
-        // If all earned rewards are claimed, progress is remainder: totalEligibleCups % threshold
-        let currentCycleProgress = totalEligibleCups % threshold;
-        let purchasesRemaining = threshold - currentCycleProgress;
-
         const isEligible = availableRewards > 0;
+
+        // Effective purchases active in the current cycle after accounting for claimed rewards
+        const purchasesSinceClaimed = Math.max(0, completedPurchasesCount - (claimedCount * threshold));
+        // Current cycle progress (if eligible, customer reached the threshold; otherwise remainder of active purchases)
+        const currentCycleProgress = isEligible ? threshold : (purchasesSinceClaimed % threshold);
+        const purchasesRemaining = isEligible ? 0 : (threshold - currentCycleProgress);
 
         return {
             customer: customer || { phone: cleanPhone, name: 'Guest' },
             threshold,
-            totalEligibleCups,
+            totalCupsPurchased,       // Total cups bought across all transactions
+            totalEligibleCups: totalCupsPurchased, // Backward compatibility for any legacy callers
+            completedPurchasesCount,  // Total separate completed purchase transactions
             totalEarnedRewards,
             claimedCount,
             availableRewards,

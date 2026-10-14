@@ -28,15 +28,19 @@ class TestTiraBelleBusinessLogic(unittest.TestCase):
         self.assertEqual(escape_html('" onerror="exploit()'), '&quot; onerror=&quot;exploit()')
         self.assertEqual(escape_html("Tom & Jerry's"), 'Tom &amp; Jerry&#39;s')
 
-    def calculate_loyalty(self, total_cups, claimed_rewards, threshold=5):
-        total_earned = total_cups // threshold
+    def calculate_loyalty(self, completed_purchases, claimed_rewards, threshold=5, total_cups=None):
+        if total_cups is None:
+            total_cups = completed_purchases
+        total_earned = completed_purchases // threshold
         available = max(0, total_earned - claimed_rewards)
         is_eligible = available > 0
-        progress = total_cups % threshold
+        purchases_since_claimed = max(0, completed_purchases - (claimed_rewards * threshold))
+        progress = threshold if is_eligible else (purchases_since_claimed % threshold)
         remaining = 0 if is_eligible else (threshold - progress)
         return {
             'threshold': threshold,
             'total_cups': total_cups,
+            'completed_purchases': completed_purchases,
             'total_earned': total_earned,
             'claimed': claimed_rewards,
             'available': available,
@@ -45,44 +49,65 @@ class TestTiraBelleBusinessLogic(unittest.TestCase):
             'remaining': remaining
         }
 
-    def test_loyalty_cycle_0_cups(self):
+    def test_loyalty_cycle_0_purchases(self):
         res = self.calculate_loyalty(0, 0, 5)
         self.assertFalse(res['is_eligible'])
         self.assertEqual(res['progress'], 0)
         self.assertEqual(res['remaining'], 5)
 
-    def test_loyalty_cycle_3_cups(self):
+    def test_loyalty_cycle_3_purchases(self):
         res = self.calculate_loyalty(3, 0, 5)
         self.assertFalse(res['is_eligible'])
         self.assertEqual(res['progress'], 3)
         self.assertEqual(res['remaining'], 2)
 
-    def test_loyalty_cycle_5_cups_eligible(self):
-        res = self.calculate_loyalty(5, 0, 5)
+    def test_loyalty_multi_cup_single_transaction(self):
+        # Purchasing 4 cups in 1 single transaction still counts as 1 purchase
+        res = self.calculate_loyalty(completed_purchases=1, claimed_rewards=0, threshold=5, total_cups=4)
+        self.assertEqual(res['total_cups'], 4)
+        self.assertEqual(res['completed_purchases'], 1)
+        self.assertFalse(res['is_eligible'])
+        self.assertEqual(res['progress'], 1)
+        self.assertEqual(res['remaining'], 4)
+
+    def test_loyalty_cycle_5_purchases_eligible(self):
+        # Jay scenario: 5 completed transactions, total 8 cups bought, 0 claimed
+        res = self.calculate_loyalty(completed_purchases=5, claimed_rewards=0, threshold=5, total_cups=8)
         self.assertTrue(res['is_eligible'])
         self.assertEqual(res['available'], 1)
+        self.assertEqual(res['claimed'], 0)
         self.assertEqual(res['remaining'], 0)
+        self.assertEqual(res['progress'], 5)
 
-    def test_loyalty_cycle_5_cups_claimed(self):
-        res = self.calculate_loyalty(5, 1, 5)
+    def test_loyalty_cycle_5_purchases_claimed(self):
+        # Jay redeems his reward: claimed becomes 1, progress resets to 0/5
+        res = self.calculate_loyalty(completed_purchases=5, claimed_rewards=1, threshold=5, total_cups=8)
         self.assertFalse(res['is_eligible'])
         self.assertEqual(res['available'], 0)
+        self.assertEqual(res['claimed'], 1)
         self.assertEqual(res['progress'], 0)
         self.assertEqual(res['remaining'], 5)
 
-    def test_loyalty_cycle_7_cups_1_claimed(self):
-        # Rahul Verma scenario: Bought 7 cups total, claimed 1
-        res = self.calculate_loyalty(7, 1, 5)
+    def test_loyalty_cycle_7_purchases_1_claimed(self):
+        # Rahul Verma scenario: 7 completed transactions, total 12 cups, 1 claimed
+        res = self.calculate_loyalty(completed_purchases=7, claimed_rewards=1, threshold=5, total_cups=12)
         self.assertFalse(res['is_eligible'])
+        self.assertEqual(res['claimed'], 1)
         self.assertEqual(res['progress'], 2)
         self.assertEqual(res['remaining'], 3)
 
     def test_loyalty_threshold_change(self):
-        # Changing threshold to 4 dynamically updates rewards
-        res4 = self.calculate_loyalty(7, 1, 4)
-        self.assertEqual(res4['threshold'], 4)
-        self.assertEqual(res4['progress'], 3)
-        self.assertEqual(res4['remaining'], 1)
+        # Changing threshold to 6: 5 transactions is no longer eligible (needs 1 more)
+        res6 = self.calculate_loyalty(completed_purchases=5, claimed_rewards=0, threshold=6, total_cups=8)
+        self.assertFalse(res6['is_eligible'])
+        self.assertEqual(res6['threshold'], 6)
+        self.assertEqual(res6['progress'], 5)
+        self.assertEqual(res6['remaining'], 1)
+
+        # 7 transactions with 1 claimed at threshold 6 -> 7 - 6 = 1 -> 1/6 progress
+        res7 = self.calculate_loyalty(completed_purchases=7, claimed_rewards=1, threshold=6, total_cups=12)
+        self.assertEqual(res7['progress'], 1)
+        self.assertEqual(res7['remaining'], 5)
 
     def test_pos_financial_math(self):
         items = [
