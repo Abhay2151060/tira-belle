@@ -5,6 +5,14 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     initMobileNav();
+    renderStorefrontBranding();
+    renderPublicProducts();
+    renderPublicLoyaltyInfo();
+});
+
+// Re-render when business settings change centrally or cross-tab
+window.addEventListener('tira-settings-changed', () => {
+    renderStorefrontBranding();
     renderPublicProducts();
     renderPublicLoyaltyInfo();
 });
@@ -134,3 +142,67 @@ window.handleQuickTrack = function() {
     // Redirect to tracker.html with query parameter
     window.location.href = `tracker.html?phone=${encodeURIComponent(val)}`;
 };
+
+function renderStorefrontBranding() {
+    if (!window.TiraDB) return;
+    const settings = window.TiraDB.getSettings();
+    window.TiraDB.applyGlobalBranding(settings);
+
+    // Dynamic WhatsApp contact items in Visit Our Dessert Studio section
+    const contactsContainer = document.getElementById('publicStorefrontContactLinks');
+    if (contactsContainer) {
+        const phone1 = settings.phone || '9373484198';
+        const phone2 = settings.phoneSecondary || '';
+        const owner = settings.owner || 'Yash Chauhan & Tejas Chauhan';
+        const bizName = settings.businessName || 'TIRA Belle';
+
+        let html = `
+            <div style="font-weight: 700; color: var(--color-espresso);">WhatsApp &amp; Direct Orders</div>
+            <div style="font-size: 0.92rem; color: var(--color-text-main);">
+                <strong>Primary:</strong> <a href="https://wa.me/91${phone1.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello! I would like to order ${bizName} tiramisu`)}" target="_blank" style="color: var(--color-caramel); font-weight: 600;">${phone1}</a>
+            </div>
+        `;
+        if (phone2) {
+            html += `
+                <div style="font-size: 0.92rem; color: var(--color-text-main);">
+                    <strong>Secondary:</strong> <a href="https://wa.me/91${phone2.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello! I would like to order ${bizName} tiramisu`)}" target="_blank" style="color: var(--color-caramel); font-weight: 600;">${phone2}</a>
+                </div>
+            `;
+        }
+        contactsContainer.innerHTML = html;
+    }
+
+    // Dynamic Action CTA buttons
+    const btnContainer = document.getElementById('publicStorefrontActionButtons');
+    if (btnContainer) {
+        const phone1 = settings.phone || '9373484198';
+        const phone2 = settings.phoneSecondary || '';
+        const bizName = settings.businessName || 'TIRA Belle';
+
+        let btnsHtml = `
+            <a href="https://wa.me/91${phone1.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello! I would like to order ${bizName} tiramisu`)}" target="_blank" class="btn btn-caramel btn-lg">
+                <i data-lucide="phone" data-size="18"></i>
+                <span>WhatsApp Order</span>
+            </a>
+        `;
+        if (phone2) {
+            btnsHtml += `
+                <a href="https://wa.me/91${phone2.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello! I would like to order ${bizName} tiramisu`)}" target="_blank" class="btn btn-caramel btn-lg">
+                    <i data-lucide="phone" data-size="18"></i>
+                    <span>Contact #${phone2}</span>
+                </a>
+            `;
+        }
+        btnsHtml += `
+            <a href="tracker.html" class="btn btn-outline btn-lg">
+                <i data-lucide="award" data-size="18"></i>
+                <span>Check Loyalty Status</span>
+            </a>
+        `;
+        btnContainer.innerHTML = btnsHtml;
+    }
+
+    if (window.lucide) {
+        window.lucide.createIcons();
+    }
+}

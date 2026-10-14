@@ -171,6 +171,49 @@ class TestTiraBelleBusinessLogic(unittest.TestCase):
         claimed_phones = {r['customerPhone'] for r in redemptions}
         self.assertEqual(claimed_phones, {'333'})
 
+    def test_business_settings_defaults(self):
+        default_settings = {
+            'businessName': 'TIRA Belle',
+            'tagline': 'Little Layers • Big Love',
+            'slogan': 'Layers of Love in Every Spoon',
+            'owner': 'Yash Chauhan & Tejas Chauhan',
+            'phone': '9373484198',
+            'phoneSecondary': '8484870543',
+            'whatsapp': '9373484198',
+            'address': 'Physical Dessert Studio & Artisan Counter, Pune',
+            'email': 'tirabelle.desserts@gmail.com',
+            'instagram': '@tirabelle',
+            'upiId': '9373484198@upi',
+            'currency': '₹',
+            'loyaltyThreshold': 5,
+            'rewardItemName': '1 Free 150g Tiramisu Cup',
+            'logo': 'assets/tira-belle-logo.png'
+        }
+        self.assertIn('logo', default_settings)
+        self.assertIn('owner', default_settings)
+        self.assertIn('phoneSecondary', default_settings)
+        self.assertIn('email', default_settings)
+        self.assertIn('instagram', default_settings)
+        self.assertTrue(default_settings['logo'].endswith('.png'))
+
+    def test_business_settings_update_and_merge(self):
+        initial = {
+            'businessName': 'TIRA Belle',
+            'logo': 'assets/tira-belle-logo.png',
+            'phone': '9373484198'
+        }
+        updates = {
+            'businessName': 'TIRA Belle Artisanal',
+            'logo': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+            'phoneSecondary': '8484870543'
+        }
+        merged = {**initial, **updates}
+        self.assertEqual(merged['businessName'], 'TIRA Belle Artisanal')
+        self.assertTrue(merged['logo'].startswith('data:image/png;base64,'))
+        self.assertEqual(merged['phone'], '9373484198')
+        self.assertEqual(merged['phoneSecondary'], '8484870543')
+
 if __name__ == '__main__':
     unittest.main()
+
 

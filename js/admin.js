@@ -620,6 +620,25 @@ window.viewReceipt = function(saleId) {
         loyaltyNote.textContent = `${loyalty.purchasesRemaining} more purchase(s) to unlock your free reward!`;
     }
 
+    // Business branding in receipt
+    const recLogo = document.getElementById('recLogo');
+    if (recLogo) recLogo.src = settings.logo || 'assets/tira-belle-logo.png';
+    const recBizName = document.getElementById('recBizName');
+    if (recBizName) recBizName.textContent = settings.businessName || 'TIRA Belle';
+    const recTagline = document.getElementById('recTagline');
+    if (recTagline) recTagline.textContent = (settings.tagline || 'LITTLE LAYERS • BIG LOVE').toUpperCase();
+    const recSlogan = document.getElementById('recSlogan');
+    if (recSlogan) recSlogan.textContent = settings.slogan || 'Handcrafted Italian Tiramisu';
+    const recAddress = document.getElementById('recAddress');
+    if (recAddress) recAddress.textContent = settings.address || 'Physical Dessert Studio & Artisan Counter, Pune';
+    const recFooterSlogan = document.getElementById('recFooterSlogan');
+    if (recFooterSlogan) recFooterSlogan.textContent = 'Thank you for tasting the love in every spoon!';
+    const recFooterContact = document.getElementById('recFooterContact');
+    if (recFooterContact) {
+        const secPhone = settings.phoneSecondary ? ` / ${settings.phoneSecondary}` : '';
+        recFooterContact.textContent = `Owners: ${settings.owner || 'Yash Chauhan & Tejas Chauhan'} • ${settings.phone || '9373484198'}${secPhone}`;
+    }
+
     document.getElementById('receiptModal').classList.add('active');
     if (window.lucide) window.lucide.createIcons();
 };
@@ -1206,6 +1225,83 @@ window.printStandee = function() {
 };
 
 // ----------------- SECTION 7: SETTINGS -----------------
+let currentSettingsLogo = '';
+
+window.handleLogoFileSelect = function(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        showToast('Please select a valid image file (PNG, JPG, WebP, SVG).', 'warning');
+        return;
+    }
+
+    // Process & resize image to safe dimensions (< 500x500) to keep localStorage fast & clean
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const maxDimension = 500;
+            let width = img.width;
+            let height = img.height;
+            if (width > maxDimension || height > maxDimension) {
+                if (width > height) {
+                    height = Math.round((height * maxDimension) / width);
+                    width = maxDimension;
+                } else {
+                    width = Math.round((width * maxDimension) / height);
+                    height = maxDimension;
+                }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            const format = file.type === 'image/png' || file.type === 'image/webp' ? file.type : 'image/jpeg';
+            const dataUrl = canvas.toDataURL(format, 0.92);
+            
+            currentSettingsLogo = dataUrl;
+            const preview = document.getElementById('setLogoPreview');
+            if (preview) preview.src = dataUrl;
+            const urlInput = document.getElementById('setLogoUrl');
+            if (urlInput) urlInput.value = '';
+            showToast('Logo image loaded! Click "Save Business Information" to apply.', 'info');
+        };
+        img.onerror = function() {
+            showToast('Could not process selected image file.', 'error');
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+};
+
+window.handleLogoUrlInput = function(val) {
+    const trimmed = (val || '').trim();
+    if (trimmed) {
+        currentSettingsLogo = trimmed;
+        const preview = document.getElementById('setLogoPreview');
+        if (preview) preview.src = trimmed;
+    } else {
+        const s = window.TiraDB.getSettings();
+        currentSettingsLogo = s.logo || 'assets/tira-belle-logo.png';
+        const preview = document.getElementById('setLogoPreview');
+        if (preview) preview.src = currentSettingsLogo;
+    }
+};
+
+window.resetLogoToDefault = function() {
+    currentSettingsLogo = 'assets/tira-belle-logo.png';
+    const preview = document.getElementById('setLogoPreview');
+    if (preview) preview.src = currentSettingsLogo;
+    const urlInput = document.getElementById('setLogoUrl');
+    if (urlInput) urlInput.value = 'assets/tira-belle-logo.png';
+    const fileInput = document.getElementById('setLogoFileInput');
+    if (fileInput) fileInput.value = '';
+    showToast('Logo reset to default. Click "Save Business Information" to commit.', 'info');
+};
+
 function updateStandeeAndHelpTexts(threshold, rewardItem) {
     const standeeTitle = document.getElementById('standeeOfferTitle');
     if (standeeTitle) {
@@ -1219,11 +1315,32 @@ function updateStandeeAndHelpTexts(threshold, rewardItem) {
 
 function populateSettingsFields() {
     const s = window.TiraDB.getSettings();
+    currentSettingsLogo = s.logo || 'assets/tira-belle-logo.png';
+
+    const preview = document.getElementById('setLogoPreview');
+    if (preview) preview.src = currentSettingsLogo;
+    const urlInput = document.getElementById('setLogoUrl');
+    if (urlInput) {
+        urlInput.value = s.logo && !s.logo.startsWith('data:') ? s.logo : '';
+    }
+
     document.getElementById('setBusinessName').value = s.businessName || 'TIRA Belle';
     document.getElementById('setTagline').value = s.tagline || '';
-    document.getElementById('setOwnerName').value = s.owner || 'Yash Chauhan';
+    const sloganEl = document.getElementById('setSlogan');
+    if (sloganEl) sloganEl.value = s.slogan || '';
+    document.getElementById('setOwnerName').value = s.owner || 'Yash Chauhan & Tejas Chauhan';
     document.getElementById('setPhone').value = s.phone || '9373484198';
+    const secPhoneEl = document.getElementById('setPhoneSecondary');
+    if (secPhoneEl) secPhoneEl.value = s.phoneSecondary || '';
+    const emailEl = document.getElementById('setEmail');
+    if (emailEl) emailEl.value = s.email || '';
+    const instaEl = document.getElementById('setInstagram');
+    if (instaEl) instaEl.value = s.instagram || '';
+    const addrEl = document.getElementById('setAddress');
+    if (addrEl) addrEl.value = s.address || '';
     document.getElementById('setUpiId').value = s.upiId || '9373484198@upi';
+    const currEl = document.getElementById('setCurrency');
+    if (currEl) currEl.value = s.currency || '₹';
 
     const threshold = s.loyaltyThreshold || 5;
     const rewardItem = s.rewardItemName || '1 Free 150g Tiramisu Cup';
@@ -1238,14 +1355,34 @@ function populateSettingsFields() {
 }
 
 window.saveBusinessSettings = function() {
-    window.TiraDB.updateSettings({
-        businessName: document.getElementById('setBusinessName').value.trim(),
+    const bizName = document.getElementById('setBusinessName').value.trim();
+    if (!bizName) {
+        showToast('Business name cannot be empty.', 'warning');
+        return;
+    }
+
+    const s = window.TiraDB.getSettings();
+    const logoToSave = currentSettingsLogo || s.logo || 'assets/tira-belle-logo.png';
+
+    const updated = window.TiraDB.updateSettings({
+        businessName: bizName,
         tagline: document.getElementById('setTagline').value.trim(),
+        slogan: document.getElementById('setSlogan') ? document.getElementById('setSlogan').value.trim() : (s.slogan || ''),
         owner: document.getElementById('setOwnerName').value.trim(),
         phone: document.getElementById('setPhone').value.trim(),
-        upiId: document.getElementById('setUpiId').value.trim()
+        phoneSecondary: document.getElementById('setPhoneSecondary') ? document.getElementById('setPhoneSecondary').value.trim() : (s.phoneSecondary || ''),
+        whatsapp: document.getElementById('setPhone').value.trim(),
+        email: document.getElementById('setEmail') ? document.getElementById('setEmail').value.trim() : (s.email || ''),
+        instagram: document.getElementById('setInstagram') ? document.getElementById('setInstagram').value.trim() : (s.instagram || ''),
+        address: document.getElementById('setAddress') ? document.getElementById('setAddress').value.trim() : (s.address || ''),
+        upiId: document.getElementById('setUpiId').value.trim(),
+        currency: document.getElementById('setCurrency') ? (document.getElementById('setCurrency').value.trim() || '₹') : (s.currency || '₹'),
+        logo: logoToSave
     });
-    showToast('Business details updated successfully!', 'success');
+
+    // Update standee QR & elements
+    renderCounterQr();
+    showToast('Business details & logo updated! Centrally synchronized across application.', 'success');
 };
 
 window.saveLoyaltySettings = function() {

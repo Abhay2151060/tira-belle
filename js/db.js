@@ -47,14 +47,18 @@ const DEFAULT_SETTINGS = {
     businessName: 'TIRA Belle',
     tagline: 'Little Layers • Big Love',
     slogan: 'Layers of Love in Every Spoon',
-    owner: 'Yash Chauhan',
+    owner: 'Yash Chauhan & Tejas Chauhan',
     phone: '9373484198',
+    phoneSecondary: '8484870543',
     whatsapp: '9373484198',
-    address: 'Physical Dessert Studio & Artisan Counter',
+    address: 'Physical Dessert Studio & Artisan Counter, Pune',
+    email: 'tirabelle.desserts@gmail.com',
+    instagram: '@tirabelle',
     upiId: '9373484198@upi',
     currency: '₹',
     loyaltyThreshold: 5,
     rewardItemName: '1 Free 150g Tiramisu Cup',
+    logo: 'assets/tira-belle-logo.png',
     adminUsername: 'admin',
     // SHA-256('tirabelle123' + 'TIRABELLE_SALT_2026')
     adminPasswordHash: 'f2af6949747f4753b33ecc567ba642802ae0e95556ba8f865598d2c7e04cb630',
@@ -354,6 +358,13 @@ class TiraBelleDB {
     constructor() {
         this.data = this.load();
         this.checkOneTimeCleanData();
+        if (typeof document !== 'undefined') {
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => this.applyGlobalBranding());
+            } else {
+                this.applyGlobalBranding();
+            }
+        }
     }
 
     checkOneTimeCleanData() {
@@ -462,7 +473,140 @@ class TiraBelleDB {
     updateSettings(newSettings) {
         this.data.settings = { ...this.data.settings, ...newSettings };
         this.save();
+        this.applyGlobalBranding();
+        try {
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('tira-settings-changed', { detail: this.data.settings }));
+            }
+        } catch (e) {}
         return this.data.settings;
+    }
+
+    applyGlobalBranding(settings = this.getSettings()) {
+        if (typeof document === 'undefined') return;
+        const bizName = settings.businessName || 'TIRA Belle';
+        const logo = settings.logo || 'assets/tira-belle-logo.png';
+        const tagline = settings.tagline || 'Little Layers • Big Love';
+        const slogan = settings.slogan || 'Layers of Love in Every Spoon';
+        const owner = settings.owner || 'Yash Chauhan & Tejas Chauhan';
+        const phone = settings.phone || '9373484198';
+        const phoneSec = settings.phoneSecondary || '';
+        const whatsapp = settings.whatsapp || phone;
+        const address = settings.address || 'Physical Dessert Studio & Artisan Counter, Pune';
+        const email = settings.email || '';
+        const instagram = settings.instagram || '';
+        const upiId = settings.upiId || '';
+
+        // 1. Logos
+        document.querySelectorAll('[data-brand="logo"], .tira-brand-logo').forEach(el => {
+            if (el.tagName === 'IMG') {
+                el.src = logo;
+                el.alt = `${bizName} Logo`;
+            }
+        });
+        document.querySelectorAll('[data-brand="logo-footer"]').forEach(el => {
+            if (el.tagName === 'IMG') {
+                el.src = logo;
+                el.alt = `${bizName} Logo`;
+            }
+        });
+
+        // 2. Business Name
+        document.querySelectorAll('[data-brand="name"]').forEach(el => {
+            el.textContent = bizName;
+        });
+
+        // 3. Tagline
+        document.querySelectorAll('[data-brand="tagline"]').forEach(el => {
+            el.textContent = tagline;
+        });
+
+        // 4. Slogan
+        document.querySelectorAll('[data-brand="slogan"]').forEach(el => {
+            el.textContent = slogan;
+        });
+
+        // 5. Owner
+        document.querySelectorAll('[data-brand="owner"]').forEach(el => {
+            el.textContent = owner;
+        });
+
+        // 6. Address
+        document.querySelectorAll('[data-brand="address"]').forEach(el => {
+            el.textContent = address;
+        });
+
+        // 7. Phone
+        document.querySelectorAll('[data-brand="phone"]').forEach(el => {
+            if (el.tagName === 'A') {
+                el.href = `tel:${phone}`;
+            }
+            el.textContent = phone;
+        });
+
+        // 8. Secondary Phone
+        document.querySelectorAll('[data-brand="phone-secondary"]').forEach(el => {
+            if (el.tagName === 'A') {
+                el.href = `tel:${phoneSec}`;
+            }
+            el.textContent = phoneSec;
+        });
+
+        // 9. Email
+        document.querySelectorAll('[data-brand="email"]').forEach(el => {
+            if (el.tagName === 'A') {
+                el.href = `mailto:${email}`;
+            }
+            el.textContent = email;
+            const parentRow = el.closest('#footerEmailRow');
+            if (parentRow) parentRow.style.display = email ? 'flex' : 'none';
+        });
+
+        // 10. Instagram
+        document.querySelectorAll('[data-brand="instagram"]').forEach(el => {
+            const cleanInsta = instagram.replace(/^@/, '');
+            if (el.tagName === 'A') {
+                el.href = `https://instagram.com/${cleanInsta}`;
+            }
+            el.textContent = instagram.startsWith('@') ? instagram : (instagram ? `@${instagram}` : '');
+            const parentRow = el.closest('#footerInstaRow');
+            if (parentRow) parentRow.style.display = instagram ? 'flex' : 'none';
+        });
+
+        // 11. UPI ID
+        document.querySelectorAll('[data-brand="upi"]').forEach(el => {
+            el.textContent = upiId;
+        });
+
+        // 12. WhatsApp Links
+        document.querySelectorAll('[data-brand="whatsapp-link"]').forEach(el => {
+            if (el.tagName === 'A') {
+                const cleanNum = (whatsapp || phone).replace(/\D/g, '');
+                el.href = `https://wa.me/91${cleanNum}?text=${encodeURIComponent(`Hello! I would like to order ${bizName} tiramisu`)}`;
+            }
+        });
+
+        // 13. Contact Summary / Combined WhatsApp
+        document.querySelectorAll('[data-brand="contact-summary"]').forEach(el => {
+            const secPart = phoneSec ? ` / ${phoneSec}` : '';
+            el.textContent = `Counter Service: ${owner} • WhatsApp: ${phone}${secPart}`;
+        });
+
+        // 14. Footer Contact Phone Line
+        document.querySelectorAll('[data-brand="contact-phones"]').forEach(el => {
+            const secPart = phoneSec ? ` / ${phoneSec}` : '';
+            el.textContent = `WhatsApp: ${phone}${secPart}`;
+        });
+
+        // 15. Footer Copyright
+        document.querySelectorAll('[data-brand="copyright"]').forEach(el => {
+            el.textContent = `© ${new Date().getFullYear()} ${bizName} • Handcrafted with love by ${owner}. All rights reserved.`;
+        });
+
+        // 16. Claim Notice (Tracker)
+        document.querySelectorAll('[data-brand="claim-notice"]').forEach(el => {
+            el.textContent = `Simply show this screen or provide your phone number at the ${bizName} physical counter (${address}). The staff will verify and hand you your freshly crafted 150g cup!`;
+        });
     }
 
     async updateCredentials({ username, password, pin }) {
@@ -906,6 +1050,17 @@ if (typeof window !== 'undefined') {
     window.escapeHtml = escapeHtml;
     window.hashCredential = hashCredential;
     window.TiraDB = new TiraBelleDB();
+
+    // Cross-tab real-time sync for localStorage updates
+    window.addEventListener('storage', (e) => {
+        if (e.key === STORAGE_KEY && window.TiraDB) {
+            window.TiraDB.data = window.TiraDB.load();
+            window.TiraDB.applyGlobalBranding();
+            try {
+                window.dispatchEvent(new CustomEvent('tira-settings-changed', { detail: window.TiraDB.data.settings }));
+            } catch (err) {}
+        }
+    });
 }
 
 if (typeof module !== 'undefined' && module.exports) {

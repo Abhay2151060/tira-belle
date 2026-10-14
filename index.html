@@ -134,10 +134,10 @@
     <header class="navbar">
         <div class="container navbar-container">
             <a href="index.html" class="nav-brand">
-                <img src="assets/tira-belle-logo.png" alt="TIRA Belle Logo" class="nav-logo-img">
+                <img src="assets/tira-belle-logo.png" alt="TIRA Belle Logo" class="nav-logo-img" data-brand="logo">
                 <div class="nav-brand-text">
-                    <span class="brand-title">TIRA Belle</span>
-                    <span class="brand-subtitle">Little Layers • Big Love</span>
+                    <span class="brand-title" data-brand="name">TIRA Belle</span>
+                    <span class="brand-subtitle" data-brand="tagline">Little Layers • Big Love</span>
                 </div>
             </a>
 
@@ -171,7 +171,7 @@
             <div class="hero-content">
                 <div class="hero-tagline-wrapper">
                     <i data-lucide="coffee" data-size="16"></i>
-                    <span class="hero-tagline-text">Layers of Love in Every Spoon</span>
+                    <span class="hero-tagline-text" data-brand="slogan">Layers of Love in Every Spoon</span>
                 </div>
 
                 <h1 class="hero-title">
@@ -380,21 +380,21 @@
                 <span class="section-pretitle">Handcrafted Fresh</span>
                 <h2 class="section-title">Visit Our Dessert Studio</h2>
                 <p style="color: var(--color-text-muted); font-size: 1.05rem; line-height: 1.7; margin-bottom: 20px;">
-                    TIRA Belle is founded with a pure passion for authentic desserts. We craft our tiramisu fresh every day, ensuring every spoonful delivers the perfect balance of bittersweet cocoa, rich espresso, and silky mascarpone cream.
+                    <strong data-brand="name">TIRA Belle</strong> is founded with a pure passion for authentic desserts. We craft our tiramisu fresh every day, ensuring every spoonful delivers the perfect balance of bittersweet cocoa, rich espresso, and silky mascarpone cream.
                 </p>
 
                 <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 28px;">
                     <div class="hero-badge-item">
                         <div class="hero-badge-icon"><i data-lucide="user-round" data-size="20"></i></div>
                         <div>
-                            <div style="font-weight: 700; color: var(--color-espresso);">Owners & Artisan Chefs</div>
-                            <div style="font-size: 0.95rem; color: var(--color-espresso); margin-top: 2px;">Yash Chauhan &amp; Tejas Chauhan</div>
+                            <div style="font-weight: 700; color: var(--color-espresso);">Owners &amp; Artisan Chefs</div>
+                            <div style="font-size: 0.95rem; color: var(--color-espresso); margin-top: 2px;" data-brand="owner">Yash Chauhan &amp; Tejas Chauhan</div>
                         </div>
                     </div>
                     <div class="hero-badge-item">
                         <div class="hero-badge-icon"><i data-lucide="phone" data-size="20"></i></div>
-                        <div style="display: flex; flex-direction: column; gap: 6px;">
-                            <div style="font-weight: 700; color: var(--color-espresso);">WhatsApp & Direct Orders</div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;" id="publicStorefrontContactLinks">
+                            <div style="font-weight: 700; color: var(--color-espresso);">WhatsApp &amp; Direct Orders</div>
                             <div style="font-size: 0.92rem; color: var(--color-text-main);">
                                 <strong>Yash Chauhan:</strong> <a href="https://wa.me/919373484198?text=Hello%20Yash!%20I%20would%20like%20to%20order%20TIRA%20Belle%20tiramisu" target="_blank" style="color: var(--color-caramel); font-weight: 600;">9373484198</a>
                             </div>
@@ -407,12 +407,12 @@
                         <div class="hero-badge-icon"><i data-lucide="map-pin" data-size="20"></i></div>
                         <div>
                             <div style="font-weight: 700; color: var(--color-espresso);">Store Counter Service</div>
-                            <div style="font-size: 0.88rem; color: var(--color-text-muted);">Physical counter billing & loyalty tracking</div>
+                            <div style="font-size: 0.88rem; color: var(--color-text-muted);" data-brand="address">Physical Dessert Studio &amp; Artisan Counter, Pune</div>
                         </div>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 14px; flex-wrap: wrap;" id="publicStorefrontActionButtons">
                     <a href="https://wa.me/919373484198?text=Hello%20Yash!%20I%20would%20like%20to%20order%20TIRA%20Belle%20tiramisu" target="_blank" class="btn btn-caramel btn-lg">
                         <i data-lucide="phone" data-size="18"></i>
                         <span>WhatsApp Yash</span>
@@ -437,13 +437,13 @@
                 
                 <div>
                     <div class="nav-brand" style="margin-bottom: 12px;">
-                        <img src="assets/tira-belle-logo.png" alt="TIRA Belle" style="height: 50px; filter: brightness(0) invert(1);">
+                        <img src="assets/tira-belle-logo.png" alt="TIRA Belle" style="height: 50px; object-fit: contain;" data-brand="logo-footer">
                         <div class="nav-brand-text">
-                            <span class="brand-title" style="color: #fff;">TIRA Belle</span>
-                            <span class="brand-subtitle" style="color: var(--color-caramel-light);">Little Layers • Big Love</span>
+                            <span class="brand-title" style="color: #fff;" data-brand="name">TIRA Belle</span>
+                            <span class="brand-subtitle" style="color: var(--color-caramel-light);" data-brand="tagline">Little Layers • Big Love</span>
                         </div>
                     </div>
-                    <p class="footer-brand-desc">
+                    <p class="footer-brand-desc" data-brand="slogan">
                         Handcrafted gourmet Italian tiramisu in 150g and 350g kraft tubs. Layers of love in every spoon.
                     </p>
                 </div>
@@ -463,22 +463,26 @@
                     <h4 class="footer-heading">Connect With Us</h4>
                     <div class="footer-contact-item">
                         <i data-lucide="user-round" data-size="16"></i>
-                        <span>Yash Chauhan: 9373484198</span>
+                        <span data-brand="owner">Yash Chauhan &amp; Tejas Chauhan</span>
                     </div>
                     <div class="footer-contact-item">
-                        <i data-lucide="user-round" data-size="16"></i>
-                        <span>Tejas Chauhan: 8484870543</span>
+                        <i data-lucide="phone" data-size="16"></i>
+                        <span data-brand="contact-phones">WhatsApp: 9373484198 / 8484870543</span>
                     </div>
-                    <div class="footer-contact-item">
-                        <i data-lucide="coffee" data-size="16"></i>
-                        <span>Fresh Batches Daily</span>
+                    <div class="footer-contact-item" id="footerEmailRow">
+                        <i data-lucide="mail" data-size="16"></i>
+                        <span data-brand="email">tirabelle.desserts@gmail.com</span>
+                    </div>
+                    <div class="footer-contact-item" id="footerInstaRow">
+                        <i data-lucide="instagram" data-size="16"></i>
+                        <span data-brand="instagram">@tirabelle</span>
                     </div>
                 </div>
 
             </div>
 
             <div class="footer-bottom">
-                <p>© 2026 TIRA Belle • Handcrafted with love by Yash Chauhan &amp; Tejas Chauhan. All rights reserved.</p>
+                <p data-brand="copyright">© 2026 TIRA Belle • Handcrafted with love by Yash Chauhan &amp; Tejas Chauhan. All rights reserved.</p>
             </div>
         </div>
     </footer>

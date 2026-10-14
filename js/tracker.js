@@ -4,6 +4,16 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+    if (window.TiraDB) {
+        window.TiraDB.applyGlobalBranding();
+    }
+    updateTrackerRuleText();
+});
+
+window.addEventListener('tira-settings-changed', () => {
+    if (window.TiraDB) {
+        window.TiraDB.applyGlobalBranding();
+    }
     updateTrackerRuleText();
 });
 
