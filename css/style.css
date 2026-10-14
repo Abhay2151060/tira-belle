@@ -2413,3 +2413,374 @@ a {
     }
 }
 
+/* ==========================================================================
+   TIRA Belle - Unified Customizable Pop-ups, Modals & Toast Alerts
+   ========================================================================== */
+
+/* Modal Pop-up Overlay */
+.tira-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    background: rgba(36, 20, 14, 0.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 1;
+    transition: opacity 0.22s ease-out;
+    animation: tiraFadeIn 0.22s ease-out forwards;
+}
+
+.tira-popup-overlay.tira-popup-closing {
+    opacity: 0;
+    pointer-events: none;
+}
+
+@keyframes tiraFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Modal Pop-up Card */
+.tira-popup-card {
+    background: #fffdfa;
+    border: 1.5px solid rgba(183, 121, 61, 0.28);
+    border-radius: 22px;
+    box-shadow: 0 25px 60px -12px rgba(36, 20, 14, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.6) inset;
+    width: 100%;
+    max-width: 460px;
+    padding: 32px 28px 26px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transform: scale(1) translateY(0);
+    animation: tiraPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.tira-popup-closing .tira-popup-card {
+    transform: scale(0.94) translateY(10px);
+    opacity: 0;
+    transition: all 0.2s ease-in;
+}
+
+@keyframes tiraPopIn {
+    from {
+        transform: scale(0.88) translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Decorative Top Accent Stripe */
+.tira-popup-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, var(--color-caramel), #d4ac0d, var(--color-caramel));
+}
+
+.tira-popup-danger::before {
+    background: linear-gradient(90deg, #e74c3c, #c0392b, #e74c3c);
+}
+
+.tira-popup-success::before {
+    background: linear-gradient(90deg, #27ae60, #2ecc71, #27ae60);
+}
+
+.tira-popup-warning::before {
+    background: linear-gradient(90deg, #f39c12, #f1c40f, #e67e22);
+}
+
+.tira-popup-info::before {
+    background: linear-gradient(90deg, var(--color-caramel), #8b572a, var(--color-caramel));
+}
+
+/* Icon Badges */
+.tira-popup-badge {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.tira-badge-warning {
+    background: #fef9e7;
+    color: #d4ac0d;
+    border: 2px solid rgba(212, 172, 13, 0.35);
+}
+
+.tira-badge-danger {
+    background: #fdedec;
+    color: #e74c3c;
+    border: 2px solid rgba(231, 76, 60, 0.35);
+}
+
+.tira-badge-success {
+    background: #eafaf1;
+    color: #27ae60;
+    border: 2px solid rgba(39, 174, 96, 0.35);
+}
+
+.tira-badge-info {
+    background: #f8f4ee;
+    color: var(--color-caramel);
+    border: 2px solid rgba(183, 121, 61, 0.35);
+}
+
+/* Typography */
+.tira-popup-title {
+    font-family: var(--font-heading);
+    font-size: 1.55rem;
+    color: var(--color-espresso);
+    margin-bottom: 10px;
+    line-height: 1.25;
+}
+
+.tira-popup-msg {
+    font-size: 0.96rem;
+    color: var(--color-text-muted);
+    line-height: 1.55;
+    margin-bottom: 26px;
+    padding: 0 8px;
+}
+
+/* Actions Row */
+.tira-popup-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: stretch;
+}
+
+.tira-popup-actions .btn {
+    flex: 1;
+    padding: 12px 18px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 14px rgba(231, 76, 60, 0.35);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c0392b, #962d22);
+    box-shadow: 0 6px 18px rgba(231, 76, 60, 0.45);
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   TIRA Belle - Modern Rich Toasts System
+   ========================================================================== */
+.tira-toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 10001;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 400px;
+    width: calc(100% - 48px);
+    pointer-events: none;
+}
+
+.tira-toast-card {
+    pointer-events: auto;
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid rgba(183, 121, 61, 0.22);
+    box-shadow: 0 16px 40px -10px rgba(36, 20, 14, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.9) inset;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+    animation: toastSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transition: all 0.25s ease;
+}
+
+.tira-toast-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 48px -10px rgba(36, 20, 14, 0.28);
+}
+
+.tira-toast-closing {
+    opacity: 0;
+    transform: translateX(100%) scale(0.95);
+    transition: all 0.25s ease-in;
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(60px) scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+}
+
+.tira-toast-icon-wrap {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+}
+
+.tira-toast-icon-wrap svg {
+    width: 20px;
+    height: 20px;
+}
+
+.tira-toast-success .tira-toast-icon-wrap {
+    background: #eafaf1;
+    color: #27ae60;
+}
+
+.tira-toast-error .tira-toast-icon-wrap {
+    background: #fdedec;
+    color: #e74c3c;
+}
+
+.tira-toast-warning .tira-toast-icon-wrap {
+    background: #fef9e7;
+    color: #d4ac0d;
+}
+
+.tira-toast-info .tira-toast-icon-wrap {
+    background: #f8f4ee;
+    color: var(--color-caramel);
+}
+
+.tira-toast-content {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.tira-toast-title {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--color-espresso);
+    margin-bottom: 2px;
+}
+
+.tira-toast-msg {
+    font-size: 0.88rem;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.tira-toast-action-btn {
+    background: transparent;
+    border: 1px solid var(--color-caramel);
+    color: var(--color-caramel);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    align-self: center;
+    transition: var(--transition-fast);
+}
+
+.tira-toast-action-btn:hover {
+    background: var(--color-caramel);
+    color: #fff;
+}
+
+.tira-toast-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-light);
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 4px;
+    flex-shrink: 0;
+    opacity: 0.7;
+    transition: var(--transition-fast);
+}
+
+.tira-toast-close-btn:hover {
+    opacity: 1;
+    color: var(--color-espresso);
+}
+
+/* Toast Progress Bar */
+.tira-toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.tira-toast-progress-bar {
+    height: 100%;
+    width: 100%;
+    background: var(--color-caramel);
+}
+
+.tira-toast-success .tira-toast-progress-bar {
+    background: #27ae60;
+}
+
+.tira-toast-error .tira-toast-progress-bar {
+    background: #e74c3c;
+}
+
+.tira-toast-warning .tira-toast-progress-bar {
+    background: #d4ac0d;
+}
+
+@media (max-width: 600px) {
+    .tira-toast-container {
+        top: auto;
+        bottom: 20px;
+        right: 16px;
+        left: 16px;
+        width: auto;
+    }
+    .tira-popup-card {
+        padding: 24px 20px 20px;
+    }
+    .tira-popup-actions {
+        flex-direction: column-reverse;
+    }
+}
+

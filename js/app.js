@@ -136,7 +136,12 @@ window.handleQuickTrack = function() {
     const input = document.getElementById('quickTrackerInput');
     const val = input ? input.value.trim() : '';
     if (!val) {
-        alert('Please enter your phone number or name to track your loyalty progress.');
+        if (window.TiraAlert) {
+            window.TiraAlert.warning('Please enter your mobile phone number or name to look up your tiramisu loyalty stamps.', 'Loyalty Tracker');
+        } else {
+            alert('Please enter your phone number or name to track your loyalty progress.');
+        }
+        if (input) input.focus();
         return;
     }
     // Redirect to tracker.html with query parameter

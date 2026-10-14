@@ -3,7 +3,7 @@
  * Provides offline caching, network-resilience, and instant app-like loading.
  */
 
-const CACHE_NAME = 'tira-belle-v5';
+const CACHE_NAME = 'tira-belle-v6';
 
 const STATIC_ASSETS = [
     './',
@@ -12,6 +12,7 @@ const STATIC_ASSETS = [
     './tracker.html',
     './css/style.css',
     './js/icons.js',
+    './js/alerts.js',
     './js/db.js',
     './js/app.js',
     './js/admin.js',

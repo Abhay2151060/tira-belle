@@ -10,7 +10,10 @@ let activeSection = 'dashboard';
 let isAuthenticated = false;
 
 // ----------------- TOAST SYSTEM -----------------
-function showToast(message, type = 'info') {
+function showToast(message, type = 'info', title = null) {
+    if (window.TiraAlert) {
+        return window.TiraAlert.toast({ message, type, title });
+    }
     const container = document.getElementById('toastContainer');
     if (!container) return;
     const toast = document.createElement('div');
@@ -375,10 +378,25 @@ window.updateCartQty = function(productId, delta) {
     updateCartUI();
 };
 
-window.resetNewSale = function(skipConfirm = false) {
+window.resetNewSale = async function(skipConfirm = false) {
     if (!skipConfirm) {
-        const confirmed = window.confirm('Are you sure you want to clear the current sale? This will remove all items from the cart and clear all entered customer details.');
-        if (!confirmed) return;
+        const hasData = (currentCart && currentCart.length > 0) || 
+                        (document.getElementById('posCustomerPhone')?.value.trim() !== '') ||
+                        (document.getElementById('posCustomerName')?.value.trim() !== '') ||
+                        (document.getElementById('posSaleNotes')?.value.trim() !== '');
+
+        if (hasData) {
+            const confirmed = window.TiraAlert ? await window.TiraAlert.confirm({
+                title: 'Clear Current Sale?',
+                message: 'This will remove all items from the cart and clear all entered customer details so you can start a new sale from scratch.',
+                type: 'warning',
+                confirmText: 'Yes, Clear Sale',
+                cancelText: 'Keep Editing',
+                icon: 'rotate-ccw'
+            }) : window.confirm('Are you sure you want to clear the current sale? This will remove all items from the cart and clear all entered customer details.');
+
+            if (!confirmed) return;
+        }
     }
 
     currentCart = [];
@@ -767,8 +785,19 @@ window.editProduct = function(productId) {
     if (p) openProductModal(p);
 };
 
-window.deleteProduct = function(productId) {
-    if (confirm('Are you sure you want to delete this product?')) {
+window.deleteProduct = async function(productId) {
+    const p = window.TiraDB.getProductById(productId);
+    const prodName = p ? p.name : 'this product';
+    const confirmed = window.TiraAlert ? await window.TiraAlert.confirm({
+        title: 'Delete Product?',
+        message: `Are you sure you want to delete "${prodName}"? It will no longer appear on the customer storefront or POS catalog.`,
+        type: 'danger',
+        confirmText: 'Delete Product',
+        cancelText: 'Keep Product',
+        icon: 'trash-2'
+    }) : window.confirm('Are you sure you want to delete this product?');
+
+    if (confirmed) {
         window.TiraDB.deleteProduct(productId);
         showToast('Product removed.', 'info');
         renderProductsTable();
@@ -1193,8 +1222,19 @@ function renderAdminLoyaltyCard(phone) {
     if (window.lucide) window.lucide.createIcons();
 }
 
-window.triggerAdminRedemption = function(phone) {
-    if (confirm('Confirm redemption of 1 Free 150g Tiramisu Cup for this customer?')) {
+window.triggerAdminRedemption = async function(phone) {
+    const loyalty = window.TiraDB.getCustomerLoyalty(phone);
+    const custName = loyalty?.customer?.name || 'this customer';
+    const confirmed = window.TiraAlert ? await window.TiraAlert.confirm({
+        title: 'Redeem Free Tiramisu Cup?',
+        message: `Confirm redemption of 1 Free 150g Tiramisu Cup for ${custName} (${phone})? This will deduct 5 stamps from their available rewards.`,
+        type: 'success',
+        confirmText: 'Confirm Redemption',
+        cancelText: 'Cancel',
+        icon: 'gift'
+    }) : window.confirm('Confirm redemption of 1 Free 150g Tiramisu Cup for this customer?');
+
+    if (confirmed) {
         const res = window.TiraDB.redeemReward(phone, 'admin', 'Counter Claim');
         if (res.success) {
             showToast(res.message, 'success');
@@ -1491,19 +1531,37 @@ window.importBackup = function(fileInput) {
     reader.readAsText(file);
 };
 
-window.resetDemoData = function() {
-    if (confirm('Are you sure you want to load sample demo data? All current records will be replaced with initial demo records.')) {
+window.resetDemoData = async function() {
+    const confirmed = window.TiraAlert ? await window.TiraAlert.confirm({
+        title: 'Load Demo Records?',
+        message: 'All current sales transactions and customer logs will be replaced with fresh sample demo records.',
+        type: 'warning',
+        confirmText: 'Load Demo Data',
+        cancelText: 'Cancel',
+        icon: 'rotate-ccw'
+    }) : window.confirm('Are you sure you want to load sample demo data? All current records will be replaced with initial demo records.');
+
+    if (confirmed) {
         window.TiraDB.resetToDemoData();
         showToast('Demo data loaded successfully.', 'info');
-        setTimeout(() => window.location.reload(), 1000);
+        setTimeout(() => window.location.reload(), 800);
     }
 };
 
-window.clearAllDataExceptProducts = function() {
-    if (confirm('Are you sure you want to clear all customer records, sales, and redemptions? The two products and business settings will be preserved.')) {
+window.clearAllDataExceptProducts = async function() {
+    const confirmed = window.TiraAlert ? await window.TiraAlert.confirm({
+        title: 'Clear Transactional Records?',
+        message: 'Are you sure you want to clear all customer records, sales transactions, and reward redemptions? The two products and business settings will be preserved.',
+        type: 'danger',
+        confirmText: 'Clear Records',
+        cancelText: 'Cancel',
+        icon: 'triangle-alert'
+    }) : window.confirm('Are you sure you want to clear all customer records, sales, and redemptions? The two products and business settings will be preserved.');
+
+    if (confirmed) {
         window.TiraDB.clearAllExceptProducts();
         showToast('All transaction and customer data cleared. Preserved 2 products.', 'success');
-        setTimeout(() => window.location.reload(), 1000);
+        setTimeout(() => window.location.reload(), 800);
     }
 };
 

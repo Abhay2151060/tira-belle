@@ -39,7 +39,10 @@ function maskPhone(phone) {
 }
 
 // Show Toast notification
-function showToast(message, type = 'info') {
+function showToast(message, type = 'info', title = null) {
+    if (window.TiraAlert) {
+        return window.TiraAlert.toast({ message, type, title });
+    }
     const container = document.getElementById('toastContainer');
     if (!container) return;
     const toast = document.createElement('div');
