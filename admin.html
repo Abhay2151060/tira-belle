@@ -292,10 +292,6 @@
                         <h1 class="admin-page-title">Point of Sale (POS Register)</h1>
                         <p class="admin-page-subtitle">Select products, enter customer details, and save the sale</p>
                     </div>
-                    <button class="btn btn-outline btn-sm" onclick="resetNewSale()" title="Clear all cart items and customer details">
-                        <i data-lucide="rotate-ccw" data-size="14"></i>
-                        <span>Clear Sale</span>
-                    </button>
                 </div>
 
                 <div class="pos-grid">
@@ -313,13 +309,7 @@
                     <div class="pos-cart-panel">
                         <h3 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--color-espresso); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
                             <span>Current Order</span>
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <span class="pos-cart-badge" id="cartBadgeCount">0 items</span>
-                                <button type="button" class="btn btn-outline btn-sm" id="btnPosResetSaleHeader" onclick="resetNewSale()" title="Clear sale and reset all fields" style="padding: 3px 8px; font-size: 0.78rem; height: auto;">
-                                    <i data-lucide="rotate-ccw" data-size="12"></i>
-                                    <span>Clear</span>
-                                </button>
-                            </div>
+                            <span class="pos-cart-badge" id="cartBadgeCount">0 items</span>
                         </h3>
 
                         <!-- Cart Items List -->
