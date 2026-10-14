@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIRA Belle | Handcrafted Tiramisu & Loyalty Rewards</title>
+    <meta name="description" content="TIRA Belle handcrafted artisan tiramisu in 150g and 350g cups. Made fresh daily with authentic Italian mascarpone and Belgian cocoa. Track your customer loyalty points.">
+    <link rel="canonical" href="https://tirabelle.com/">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://tirabelle.com/">
+    <meta property="og:title" content="TIRA Belle | Handcrafted Tiramisu & Loyalty Rewards">
+    <meta property="og:description" content="Handcrafted Italian tiramisu in 150g single-serve and 350g sharing tubs. Authentic espresso, rich mascarpone cream, and Belgian cocoa. Buy 5 cups, get 1 free!">
+    <meta property="og:image" content="https://tirabelle.com/assets/tira-belle-logo.png">
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://tirabelle.com/">
+    <meta name="twitter:title" content="TIRA Belle | Handcrafted Tiramisu">
+    <meta name="twitter:description" content="Little Layers • Big Love. Handcrafted authentic tiramisu made fresh daily. Track loyalty rewards.">
+    <meta name="twitter:image" content="https://tirabelle.com/assets/tira-belle-logo.png">
+
+    <!-- Schema.org JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Bakery",
+          "@id": "https://tirabelle.com/#business",
+          "name": "TIRA Belle",
+          "url": "https://tirabelle.com/",
+          "logo": "https://tirabelle.com/assets/tira-belle-logo.png",
+          "image": "https://tirabelle.com/assets/tiramisu-150g.jpg",
+          "description": "Artisan dessert studio specializing in handcrafted Italian tiramisu made fresh daily with authentic mascarpone and Belgian cocoa.",
+          "telephone": "+91-9373484198",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Physical Dessert Studio & Artisan Counter",
+            "addressLocality": "Pune",
+            "addressRegion": "Maharashtra",
+            "addressCountry": "IN"
+          },
+          "founders": [
+            {
+              "@type": "Person",
+              "name": "Yash Chauhan",
+              "telephone": "+91-9373484198"
+            },
+            {
+              "@type": "Person",
+              "name": "Tejas Chauhan",
+              "telephone": "+91-8484870543"
+            }
+          ],
+          "priceRange": "₹150 - ₹220",
+          "servesCuisine": "Italian Desserts"
+        },
+        {
+          "@type": "Product",
+          "name": "Tiramisu – 150 g Classic Single Serve",
+          "image": "https://tirabelle.com/assets/tiramisu-150g.jpg",
+          "description": "Handcrafted espresso-soaked savoiardi ladyfingers, velvety mascarpone cream, finished with rich Belgian cocoa dust.",
+          "brand": {
+            "@type": "Brand",
+            "name": "TIRA Belle"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "150",
+            "priceCurrency": "INR",
+            "availability": "https://schema.org/InStock"
+          }
+        },
+        {
+          "@type": "Product",
+          "name": "Tiramisu – 350 g Sharing Tub",
+          "image": "https://tirabelle.com/assets/tiramisu-350g.jpg",
+          "description": "Generous sharing tub layered with double mascarpone cream, dark chocolate curls, and rich espresso goodness.",
+          "brand": {
+            "@type": "Brand",
+            "name": "TIRA Belle"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "220",
+            "priceCurrency": "INR",
+            "availability": "https://schema.org/InStock"
+          }
+        }
+      ]
+    }
+    </script>
+
+    <link rel="icon" type="image/png" href="assets/tira-belle-logo.png">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#24140e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TIRA Belle">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .quick-tracker-card {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            border: 2px dashed var(--color-caramel-light);
+            padding: 32px;
+            box-shadow: var(--shadow-md);
+            margin-top: 30px;
+        }
+        .story-section {
+            padding: 70px 0;
+            background: #fff;
+        }
+        .story-grid {
+            display: grid;
+            grid-template-columns: 0.9fr 1.1fr;
+            gap: 48px;
+            align-items: center;
+        }
+        @media (max-width: 860px) {
+            .story-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <div class="container navbar-container">
+            <a href="index.html" class="nav-brand">
+                <img src="assets/tira-belle-logo.png" alt="TIRA Belle Logo" class="nav-logo-img">
+                <div class="nav-brand-text">
+                    <span class="brand-title">TIRA Belle</span>
+                    <span class="brand-subtitle">Little Layers • Big Love</span>
+                </div>
+            </a>
+
+            <ul class="nav-links" id="primaryNavLinks">
+                <li><a href="#menu" class="nav-link">Our Tiramisu</a></li>
+                <li><a href="#experience" class="nav-link">The Flavor</a></li>
+                <li><a href="#loyalty" class="nav-link">Loyalty Program</a></li>
+                <li><a href="#contact" class="nav-link">Contact</a></li>
+            </ul>
+
+            <div class="nav-actions">
+                <button type="button" class="btn btn-outline btn-sm pwa-install-btn" style="display: none;" aria-label="Install TIRA Belle App">
+                    <i data-lucide="download" data-size="16"></i>
+                    <span>Install App</span>
+                </button>
+                <a href="tracker.html" class="btn btn-outline btn-sm">
+                    <i data-lucide="award" data-size="16"></i>
+                    <span>Track Rewards</span>
+                </a>
+                <button type="button" class="mobile-nav-toggle" id="mobileNavToggle" aria-label="Toggle navigation">
+                    <i data-lucide="menu" data-size="22"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container hero-grid">
+            
+            <div class="hero-content">
+                <div class="hero-tagline-wrapper">
+                    <i data-lucide="coffee" data-size="16"></i>
+                    <span class="hero-tagline-text">Layers of Love in Every Spoon</span>
+                </div>
+
+                <h1 class="hero-title">
+                    Artisan Tiramisu Handcrafted with <span class="script">Love</span>
+                </h1>
+
+                <p class="hero-desc">
+                    Experience authentic Italian indulgence. Prepared in small batches with velvety mascarpone, espresso-soaked savoiardi sponge, and a generous dusting of rich Belgian cocoa curls.
+                </p>
+
+                <!-- Flavor Badges -->
+                <div class="hero-badges">
+                    <div class="hero-badge-item">
+                        <div class="hero-badge-icon"><i data-lucide="sparkles" data-size="20"></i></div>
+                        <div class="hero-badge-label">Rich Chocolate Flavour</div>
+                    </div>
+                    <div class="hero-badge-item">
+                        <div class="hero-badge-icon"><i data-lucide="package" data-size="20"></i></div>
+                        <div class="hero-badge-label">Creamy Mascarpone</div>
+                    </div>
+                    <div class="hero-badge-item">
+                        <div class="hero-badge-icon"><i data-lucide="heart" data-size="20"></i></div>
+                        <div class="hero-badge-label">Soft, Moist & Irresistible</div>
+                    </div>
+                </div>
+
+                <div class="hero-cta-group">
+                    <a href="#menu" class="btn btn-caramel btn-lg">
+                        <span>View Available Sizes</span>
+                        <i data-lucide="arrow-down" data-size="16"></i>
+                    </a>
+                    <a href="tracker.html" class="btn btn-outline btn-lg">
+                        <i data-lucide="award" data-size="16"></i>
+                        <span>Check Loyalty Points</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Hero Poster Presentation -->
+            <div class="hero-visual">
+                <div class="hero-poster-card">
+                    <img src="assets/tira-belle-poster.jpg" alt="TIRA Belle Tiramisu Choco Cake Poster" class="hero-poster-img">
+                    
+                    <div class="hero-floating-card">
+                        <div class="floating-icon"><i data-lucide="award" data-size="20"></i></div>
+                        <div>
+                            <div class="floating-title" id="heroOfferTitle">Buy 5 Cups, Get 1 Free!</div>
+                            <div class="floating-sub">Ask at the counter for your loyalty stamp</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Flavor & Craftsmanship Section -->
+    <section class="experience-section" id="experience">
+        <div class="container">
+            <div class="section-header" style="color: #fff;">
+                <span class="section-pretitle" style="color: var(--color-caramel-light);">Handcrafted Quality</span>
+                <h2 class="section-title" style="color: #fff;">The TIRA Belle Difference</h2>
+                <p class="section-desc" style="color: rgba(255, 255, 255, 0.75);">
+                    Every cup is handcrafted using time-honored techniques, premium ingredients, and fresh preparations every single day.
+                </p>
+            </div>
+
+            <div class="exp-grid">
+                <div class="exp-card">
+                    <div class="exp-icon"><i data-lucide="coffee" data-size="28"></i></div>
+                    <h3 class="exp-title">Rich Espresso & Cocoa</h3>
+                    <p class="exp-text">Dark-roasted espresso soak paired with Belgian cocoa dust and crisp chocolate shavings for a multi-layered crunch.</p>
+                </div>
+                <div class="exp-card">
+                    <div class="exp-icon"><i data-lucide="package" data-size="28"></i></div>
+                    <h3 class="exp-title">Creamy Mascarpone</h3>
+                    <p class="exp-text">Whipped Italian mascarpone cheese folded with fresh cream into an airy, cloud-like mousse that melts on the tongue.</p>
+                </div>
+                <div class="exp-card">
+                    <div class="exp-icon"><i data-lucide="heart" data-size="28"></i></div>
+                    <h3 class="exp-title">Soft, Moist & Fresh</h3>
+                    <p class="exp-text">Traditional sponge infused with coffee aroma, perfectly balanced without being overly sweet.</p>
+                </div>
+                <div class="exp-card">
+                    <div class="exp-icon"><i data-lucide="shield-check" data-size="28"></i></div>
+                    <h3 class="exp-title">Eco Kraft Packaging</h3>
+                    <p class="exp-text">Served in sustainable, food-grade kraft tubs designed to preserve chilled freshness and texture.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Available Products Section -->
+    <section class="products-section" id="menu">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-pretitle">Freshly Prepared</span>
+                <h2 class="section-title">Our Handcrafted Menu</h2>
+                <p class="section-desc">
+                    Available in two sizes to satisfy personal cravings or sharing sweet moments. Freshly served at our physical dessert counter.
+                </p>
+            </div>
+
+            <!-- Dynamic Products Grid -->
+            <div class="products-grid" id="publicProductsGrid">
+                <!-- Injected via app.js from central DB -->
+            </div>
+
+            <div style="text-align: center; margin-top: 40px; padding: 18px 24px; background: var(--color-bg); border-radius: var(--radius-md); border: 1px dashed var(--color-border); max-width: 650px; margin-left: auto; margin-right: auto;">
+                <p style="font-size: 0.92rem; color: var(--color-espresso); font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i data-lucide="map-pin" data-size="16"></i>
+                    <span>Physical Store Service Only</span>
+                </p>
+                <p style="font-size: 0.85rem; color: var(--color-text-muted); margin-top: 4px;">
+                    We prepare fresh batches daily. No online checkout needed — visit our counter or connect with Yash & Tejas via WhatsApp to reserve your favorite cups!
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Loyalty Rewards Explainer Section -->
+    <section class="loyalty-section" id="loyalty">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-pretitle">Customer Loyalty Rewards</span>
+                <h2 class="section-title" id="loyaltyOfferTitle">Buy 5 Cups, Get 1 Free!</h2>
+                <p class="section-desc">
+                    We love our dessert lovers! Earn loyalty stamps on every eligible cup you enjoy, across any date or month.
+                </p>
+            </div>
+
+            <div class="loyalty-card-banner">
+                <div>
+                    <h3 style="font-family: var(--font-heading); font-size: 1.8rem; color: var(--color-espresso); margin-bottom: 12px;">
+                        How Your TIRA Belle Rewards Work
+                    </h3>
+                    <p style="color: var(--color-text-muted); font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px;">
+                        Every paid tiramisu cup (both 150g and 350g) earns 1 stamp toward your reward. Purchases are tracked cumulatively using your phone number.
+                    </p>
+
+                    <div class="loyalty-steps">
+                        <div class="step-item">
+                            <div class="step-num">1</div>
+                            <div class="step-text">
+                                <h4>Order at our Counter</h4>
+                                <p>Provide your phone number to the admin when recording your purchase.</p>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-num">2</div>
+                            <div class="step-text">
+                                <h4 id="loyaltyStep2Title">Collect 5 Stamps</h4>
+                                <p id="loyaltyStep2Desc">Each cup adds 1 stamp. Buy 1 today, 2 next week, 2 next month — they all count!</p>
+                            </div>
+                        </div>
+                        <div class="step-item">
+                            <div class="step-num">3</div>
+                            <div class="step-text">
+                                <h4 id="loyaltyStep3Title">Claim 1 Free 150g Tiramisu!</h4>
+                                <p>Once eligible, the counter admin records your reward and treats you to a fresh complimentary cup.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Preview Stamp Card -->
+                <div class="loyalty-stamp-card-preview">
+                    <div class="stamp-card-header">
+                        <div class="stamp-card-title">
+                            <i data-lucide="award" data-size="18"></i>
+                            <span>Loyalty Card Preview</span>
+                        </div>
+                        <span class="badge badge-success" id="loyaltyCardBadge">5 Stamps = 1 Free Cup</span>
+                    </div>
+
+                    <div class="stamps-row" id="loyaltyPreviewStampsRow">
+                        <!-- Populated dynamically by app.js -->
+                    </div>
+
+                    <!-- Quick On-Page Offer Tracker -->
+                    <div style="background: var(--color-bg); padding: 16px; border-radius: var(--radius-sm); text-align: center;">
+                        <p style="font-size: 0.88rem; font-weight: 600; color: var(--color-espresso); margin-bottom: 8px;">
+                            Already a customer? Check your stamps now:
+                        </p>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="quickTrackerInput" class="form-input" placeholder="Enter phone or name" style="padding: 8px 12px; font-size: 0.88rem;">
+                            <button class="btn btn-caramel btn-sm" onclick="handleQuickTrack()">
+                                <i data-lucide="search" data-size="14"></i>
+                                <span>Track</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Physical Store & Contact Section -->
+    <section class="story-section" id="contact">
+        <div class="container story-grid">
+            <div>
+                <img src="assets/tira-belle-poster.jpg" alt="TIRA Belle Counter" style="border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
+            </div>
+            <div>
+                <span class="section-pretitle">Handcrafted Fresh</span>
+                <h2 class="section-title">Visit Our Dessert Studio</h2>
+                <p style="color: var(--color-text-muted); font-size: 1.05rem; line-height: 1.7; margin-bottom: 20px;">
+                    TIRA Belle is founded with a pure passion for authentic desserts. We craft our tiramisu fresh every day, ensuring every spoonful delivers the perfect balance of bittersweet cocoa, rich espresso, and silky mascarpone cream.
+                </p>
+
+                <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 28px;">
+                    <div class="hero-badge-item">
+                        <div class="hero-badge-icon"><i data-lucide="user-round" data-size="20"></i></div>
+                        <div>
+                            <div style="font-weight: 700; color: var(--color-espresso);">Owners & Artisan Chefs</div>
+                            <div style="font-size: 0.95rem; color: var(--color-espresso); margin-top: 2px;">Yash Chauhan &amp; Tejas Chauhan</div>
+                        </div>
+                    </div>
+                    <div class="hero-badge-item">
+                        <div class="hero-badge-icon"><i data-lucide="phone" data-size="20"></i></div>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
+                            <div style="font-weight: 700; color: var(--color-espresso);">WhatsApp & Direct Orders</div>
+                            <div style="font-size: 0.92rem; color: var(--color-text-main);">
+                                <strong>Yash Chauhan:</strong> <a href="https://wa.me/919373484198?text=Hello%20Yash!%20I%20would%20like%20to%20order%20TIRA%20Belle%20tiramisu" target="_blank" style="color: var(--color-caramel); font-weight: 600;">9373484198</a>
+                            </div>
+                            <div style="font-size: 0.92rem; color: var(--color-text-main);">
+                                <strong>Tejas Chauhan:</strong> <a href="https://wa.me/918484870543?text=Hello%20Tejas!%20I%20would%20like%20to%20order%20TIRA%20Belle%20tiramisu" target="_blank" style="color: var(--color-caramel); font-weight: 600;">8484870543</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hero-badge-item">
+                        <div class="hero-badge-icon"><i data-lucide="map-pin" data-size="20"></i></div>
+                        <div>
+                            <div style="font-weight: 700; color: var(--color-espresso);">Store Counter Service</div>
+                            <div style="font-size: 0.88rem; color: var(--color-text-muted);">Physical counter billing & loyalty tracking</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                    <a href="https://wa.me/919373484198?text=Hello%20Yash!%20I%20would%20like%20to%20order%20TIRA%20Belle%20tiramisu" target="_blank" class="btn btn-caramel btn-lg">
+                        <i data-lucide="phone" data-size="18"></i>
+                        <span>WhatsApp Yash</span>
+                    </a>
+                    <a href="https://wa.me/918484870543?text=Hello%20Tejas!%20I%20would%20like%20to%20order%20TIRA%20Belle%20tiramisu" target="_blank" class="btn btn-caramel btn-lg">
+                        <i data-lucide="phone" data-size="18"></i>
+                        <span>WhatsApp Tejas</span>
+                    </a>
+                    <a href="tracker.html" class="btn btn-outline btn-lg">
+                        <i data-lucide="award" data-size="18"></i>
+                        <span>Check Loyalty Status</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                
+                <div>
+                    <div class="nav-brand" style="margin-bottom: 12px;">
+                        <img src="assets/tira-belle-logo.png" alt="TIRA Belle" style="height: 50px; filter: brightness(0) invert(1);">
+                        <div class="nav-brand-text">
+                            <span class="brand-title" style="color: #fff;">TIRA Belle</span>
+                            <span class="brand-subtitle" style="color: var(--color-caramel-light);">Little Layers • Big Love</span>
+                        </div>
+                    </div>
+                    <p class="footer-brand-desc">
+                        Handcrafted gourmet Italian tiramisu in 150g and 350g kraft tubs. Layers of love in every spoon.
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="footer-heading">Quick Links</h4>
+                    <ul class="footer-links">
+                        <li><a href="#menu">Our Tiramisu Menu</a></li>
+                        <li><a href="#experience">The Taste Experience</a></li>
+                        <li><a href="#loyalty">Loyalty Rewards Rules</a></li>
+                        <li><a href="tracker.html">Customer Offer Tracker</a></li>
+                        <li><a href="admin.html">Admin Portal</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="footer-heading">Connect With Us</h4>
+                    <div class="footer-contact-item">
+                        <i data-lucide="user-round" data-size="16"></i>
+                        <span>Yash Chauhan: 9373484198</span>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i data-lucide="user-round" data-size="16"></i>
+                        <span>Tejas Chauhan: 8484870543</span>
+                    </div>
+                    <div class="footer-contact-item">
+                        <i data-lucide="coffee" data-size="16"></i>
+                        <span>Fresh Batches Daily</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="footer-bottom">
+                <p>© 2026 TIRA Belle • Handcrafted with love by Yash Chauhan &amp; Tejas Chauhan. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/icons.js"></script>
+    <script src="js/pwa.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

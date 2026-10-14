@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Loyalty Tracker | TIRA Belle</title>
+    <meta name="description" content="Check your TIRA Belle tiramisu loyalty points and unlock your free 150g handcrafted dessert cup.">
+    <meta name="robots" content="noindex, follow">
+    <link rel="icon" type="image/png" href="assets/tira-belle-logo.png">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#24140e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TIRA Belle">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .tracker-page-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .tracker-brand-header {
+            text-align: center;
+            padding: 30px 20px 10px;
+        }
+        .tracker-brand-logo {
+            height: 70px;
+            margin: 0 auto 12px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06));
+        }
+        .reward-confetti {
+            display: inline-block;
+            animation: bounce 1s infinite alternate;
+        }
+        .quick-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 0.82rem;
+            color: var(--color-text-muted);
+        }
+        .quick-badge {
+            background: var(--color-bg-alt);
+            border: 1px solid var(--color-border);
+            padding: 3px 10px;
+            border-radius: var(--radius-pill);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+        .quick-badge:hover {
+            border-color: var(--color-caramel);
+            background: var(--color-caramel-subtle);
+        }
+    </style>
+</head>
+<body class="tracker-page-wrapper">
+
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="container navbar-container">
+            <a href="index.html" class="nav-brand">
+                <img src="assets/tira-belle-logo.png" alt="TIRA Belle Logo" class="nav-logo-img">
+                <div class="nav-brand-text">
+                    <span class="brand-title">TIRA Belle</span>
+                    <span class="brand-subtitle">Little Layers • Big Love</span>
+                </div>
+            </a>
+            <div class="nav-actions">
+                <a href="index.html" class="btn btn-outline btn-sm">
+                    <i data-lucide="arrow-left" data-size="16"></i>
+                    <span>Menu</span>
+                </a>
+                <a href="admin.html" class="btn btn-primary btn-sm">
+                    <i data-lucide="lock" data-size="16"></i>
+                    <span>Admin</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="container tracker-container">
+        
+        <div class="tracker-brand-header">
+            <span class="section-pretitle">Loyalty Rewards Program</span>
+            <h1 class="section-title">Track Your Tiramisu Rewards</h1>
+            <p class="section-desc">Buy <span id="trackerRuleThreshold">5</span> eligible tiramisu cups, get <strong id="trackerRuleReward">1 free 150g Tiramisu</strong>. Enter your phone number or name below to check your stamps.</p>
+        </div>
+
+        <div class="tracker-card">
+            <!-- Search Form -->
+            <form id="trackerSearchForm" onsubmit="event.preventDefault(); window.searchLoyalty();">
+                <div class="form-group">
+                    <label for="trackerInput" class="form-label">Customer Phone Number or Name</label>
+                    <div class="tracker-search-box">
+                        <input type="text" id="trackerInput" class="tracker-search-input" placeholder="e.g. 9876543210 or Jay" autocomplete="off" required>
+                        <button type="submit" class="btn btn-caramel btn-lg" id="btnTrackOffer">
+                            <i data-lucide="search" data-size="18"></i>
+                            <span>Track Offer</span>
+                        </button>
+                    </div>
+                    <div class="quick-suggestions">
+                        <span>Quick demo lookup:</span>
+                        <span class="quick-badge" onclick="fillAndSearch('9876543210')">Jay (5/5 • Eligible!)</span>
+                        <span class="quick-badge" onclick="fillAndSearch('9822012345')">Priya (3/5)</span>
+                        <span class="quick-badge" onclick="fillAndSearch('9845098765')">Rahul (2/5 • 1 Claimed)</span>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Ambiguous Name Results Selector (if multiple matching names) -->
+            <div id="ambiguousCustomersList" style="display: none; margin-bottom: 24px; padding: 16px; background: var(--color-bg); border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                <p style="font-weight: 600; font-size: 0.9rem; margin-bottom: 10px; color: var(--color-espresso);">
+                    Multiple guests found with that name. Please select your mobile number:
+                </p>
+                <div id="ambiguousCardsContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            </div>
+
+            <!-- Not Found State -->
+            <div id="trackerNotFound" style="display: none; text-align: center; padding: 30px 10px;">
+                <div style="margin-bottom: 12px; color: var(--color-caramel);"><i data-lucide="coffee" data-size="44"></i></div>
+                <h3 style="font-family: var(--font-heading); color: var(--color-espresso); margin-bottom: 6px;">No Customer Record Found</h3>
+                <p style="color: var(--color-text-muted); font-size: 0.95rem; max-width: 440px; margin: 0 auto 16px;">
+                    We couldn't find any recorded purchases under that number or name yet. Make sure your phone number was provided during your in-store purchase!
+                </p>
+                <a href="https://wa.me/919373484198?text=Hello%20TIRA%20Belle,%20I%20have%20a%20question%20about%20my%20loyalty%20points" target="_blank" class="btn btn-outline btn-sm">
+                    <i data-lucide="phone" data-size="16"></i>
+                    <span>Contact Counter via WhatsApp</span>
+                </a>
+            </div>
+
+            <!-- Result Panel -->
+            <div id="trackerResultPanel" class="tracker-result-panel">
+                
+                <!-- Guest Header -->
+                <div class="customer-badge-header">
+                    <div>
+                        <div class="customer-name-big" id="resCustomerName">Jay</div>
+                        <div class="customer-phone-masked" id="resCustomerPhone">
+                            <i data-lucide="phone" data-size="14"></i>
+                            <span>98765 •••• 10</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="counter-tag" id="resMemberStatus"><i data-lucide="award" data-size="14"></i> Active Member</span>
+                    </div>
+                </div>
+
+                <!-- Eligibility Status Banner -->
+                <div id="resStatusBanner" class="loyalty-status-banner status-in-progress">
+                    <div class="status-icon-box" id="resStatusIcon"><i data-lucide="coffee" data-size="28"></i></div>
+                    <div class="status-details">
+                        <h3 id="resStatusTitle">2 More Cups To Go!</h3>
+                        <p id="resStatusDesc">You have purchased 3 eligible cups. Buy 2 more to claim your free 150g tiramisu!</p>
+                    </div>
+                </div>
+
+                <!-- 5-Slot Loyalty Stamp Card -->
+                <div style="margin-top: 28px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <h4 style="font-size: 1rem; font-weight: 700; color: var(--color-espresso);">
+                            Your Digital Loyalty Card
+                        </h4>
+                        <span style="font-size: 0.85rem; font-weight: 700; color: var(--color-caramel);" id="resStampFraction">
+                            3 / 5 Cups
+                        </span>
+                    </div>
+                    
+                    <div class="stamp-grid-large" id="resStampsGrid">
+                        <!-- Stamps dynamically injected -->
+                    </div>
+                    
+                    <p style="text-align: center; font-size: 0.8rem; color: var(--color-text-muted); margin-top: 4px;">
+                        *Each 150g or 350g paid tiramisu cup counts as 1 stamp. Free reward cups do not count toward next stamp.
+                    </p>
+                </div>
+
+                <!-- Stats Tiles -->
+                <div class="stats-tiles">
+                    <div class="stat-tile">
+                        <div class="stat-tile-val" id="resTotalCups">3</div>
+                        <div class="stat-tile-label">Total Cups Bought</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-val" id="resRemainingCups">2</div>
+                        <div class="stat-tile-label">Cups Needed</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-val" id="resClaimedRewards">0</div>
+                        <div class="stat-tile-label">Free Desserts Claimed</div>
+                    </div>
+                </div>
+
+                <!-- Redemption Instructions & Claim History -->
+                <div class="history-section" id="resRedemptionSection" style="display: none;">
+                    <div class="history-heading">
+                        <i data-lucide="history" data-size="18"></i>
+                        <span>Previous Reward Redemptions</span>
+                    </div>
+                    <div id="resRedemptionsList"></div>
+                </div>
+
+                <!-- Counter Redemption Notice -->
+                <div style="background: var(--color-bg); border-radius: var(--radius-md); padding: 18px; margin-top: 24px; text-align: center; border: 1px dashed var(--color-border);">
+                    <p style="font-size: 0.9rem; color: var(--color-espresso); font-weight: 600; margin-bottom: 4px;">
+                        How to claim your free 150g Tiramisu?
+                    </p>
+                    <p style="font-size: 0.82rem; color: var(--color-text-muted);">
+                        Simply show this screen or provide your phone number at the TIRA Belle physical counter. The admin will verify and hand you your freshly crafted 150g cup!
+                    </p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" style="margin-top: 60px;">
+        <div class="container footer-bottom" style="border: none; padding-top: 0;">
+            <p>© 2026 TIRA Belle • Handcrafted with love by Yash Chauhan &amp; Tejas Chauhan. All rights reserved.</p>
+            <div style="display: flex; gap: 20px;">
+                <a href="index.html" style="color: rgba(255,255,255,0.7);">Home Menu</a>
+                <a href="admin.html" style="color: rgba(255,255,255,0.7);">Admin Portal</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/icons.js"></script>
+    <script src="js/pwa.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/tracker.js"></script>
+    <script>
+        function fillAndSearch(query) {
+            document.getElementById('trackerInput').value = query;
+            window.searchLoyalty();
+        }
+
+        // Auto-check URL parameters if passed (e.g. ?phone=9876543210 or ?name=Jay)
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const phone = params.get('phone');
+            const name = params.get('name');
+            if (phone) {
+                fillAndSearch(phone);
+            } else if (name) {
+                fillAndSearch(name);
+            }
+        });
+    </script>
+</body>
+</html>

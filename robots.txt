@@ -1,0 +1,15 @@
+# Robots.txt for TIRA Belle
+# Disallow private admin dashboard from indexing and crawling
+User-agent: *
+Disallow: /admin.html
+Disallow: /tracker.html
+
+# Allow all public storefront pages and assets
+Allow: /
+Allow: /index.html
+Allow: /css/
+Allow: /assets/
+Allow: /js/
+
+# XML Sitemap
+Sitemap: https://tirabelle.com/sitemap.xml

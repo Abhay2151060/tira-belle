@@ -1,0 +1,48 @@
+{
+  "name": "TIRA Belle – Artisan Tiramisu & Loyalty",
+  "short_name": "TIRA Belle",
+  "description": "Handcrafted artisan Italian tiramisu and digital customer loyalty rewards tracking system.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fcf8f3",
+  "theme_color": "#24140e",
+  "categories": ["food", "business", "lifestyle"],
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/tira-belle-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Customer Loyalty Tracker",
+      "short_name": "Tracker",
+      "description": "Track your 5-stamp loyalty reward card",
+      "url": "./tracker.html",
+      "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Admin Point of Sale",
+      "short_name": "POS Admin",
+      "description": "Counter sales register and loyalty redemption",
+      "url": "./admin.html",
+      "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

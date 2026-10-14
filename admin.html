@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | TIRA Belle Sales & Loyalty Management</title>
+    <meta name="description" content="TIRA Belle Admin Dashboard for Sales Management, Product Catalog, Customer Records, and Loyalty Rewards.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="assets/tira-belle-logo.png">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#24140e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TIRA Belle Admin">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Admin specific custom helpers */
+        .login-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(36, 20, 14, 0.94);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-box {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+        .login-logo {
+            height: 70px;
+            margin: 0 auto 16px;
+        }
+        .pos-cart-badge {
+            background: var(--color-caramel);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: var(--radius-pill);
+            font-size: 0.75rem;
+            margin-left: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Admin Authentication Gate -->
+    <div id="adminLoginModal" class="login-overlay">
+        <div class="login-box">
+            <img src="assets/tira-belle-logo.png" alt="TIRA Belle" class="login-logo">
+            <h2 style="font-family: var(--font-heading); color: var(--color-espresso); font-size: 1.6rem; margin-bottom: 6px;">
+                Admin Portal Login
+            </h2>
+            <p style="color: var(--color-text-muted); font-size: 0.88rem; margin-bottom: 24px;">
+                Secure sales, products, and loyalty administration
+            </p>
+
+            <form id="loginForm" onsubmit="event.preventDefault(); window.handleAdminLogin();">
+                <div class="form-group" style="text-align: left;">
+                    <label class="form-label" for="loginUsername">Username</label>
+                    <input type="text" id="loginUsername" class="form-input" value="admin" required autocomplete="username">
+                </div>
+                <div class="form-group" style="text-align: left;">
+                    <label class="form-label" for="loginPassword">Password or PIN</label>
+                    <input type="password" id="loginPassword" class="form-input" placeholder="Enter password or 4-digit PIN" required autocomplete="current-password">
+                    <div class="form-help">Default password: <code>tirabelle123</code> or PIN: <code>1234</code></div>
+                </div>
+                <button type="submit" class="btn btn-caramel btn-lg" style="width: 100%; margin-top: 10px;">
+                    <i data-lucide="log-in" data-size="18"></i>
+                    <span>Enter Admin Panel</span>
+                </button>
+            </form>
+            <div style="margin-top: 20px;">
+                <a href="index.html" style="font-size: 0.85rem; color: var(--color-text-muted); display: inline-flex; align-items: center; gap: 6px;">
+                    <i data-lucide="arrow-left" data-size="14"></i>
+                    <span>Return to Public Website</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Admin Layout (Revealed upon authentication) -->
+    <div class="admin-mobile-header" id="adminMobileHeader" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <img src="assets/tira-belle-logo.png" alt="TIRA Belle" style="height: 32px;">
+            <span class="brand-title">TIRA Belle Admin</span>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" id="adminSidebarToggle" onclick="toggleAdminMobileNav()" aria-label="Toggle navigation menu" style="color: #fff; border-color: rgba(255,255,255,0.3);">
+            <i data-lucide="menu" data-size="18"></i>
+            <span>Menu</span>
+        </button>
+    </div>
+    <div class="admin-sidebar-backdrop" id="adminSidebarBackdrop" onclick="closeAdminMobileNav()"></div>
+
+    <div class="admin-layout" id="adminMainLayout" style="display: none;">
+
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="admin-brand">
+                <div class="admin-brand-main">
+                    <img src="assets/tira-belle-logo.png" alt="TIRA Belle Logo" class="admin-brand-logo">
+                    <div class="admin-brand-info">
+                        <h2>TIRA Belle</h2>
+                        <span>Admin Control</span>
+                    </div>
+                </div>
+                <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()" title="Collapse Sidebar" aria-label="Toggle compact sidebar">
+                    <i data-lucide="chevron-left" data-size="16"></i>
+                </button>
+            </div>
+
+            <nav class="admin-nav">
+                <button class="admin-nav-item active" onclick="switchAdminSection('dashboard')" title="Dashboard" data-title="Dashboard">
+                    <i data-lucide="layout-dashboard" class="nav-icon"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button class="admin-nav-item" onclick="switchAdminSection('pos')" title="New Sale (POS)" data-title="New Sale (POS)">
+                    <i data-lucide="shopping-cart" class="nav-icon"></i>
+                    <span>New Sale (POS)</span>
+                </button>
+                <button class="admin-nav-item" onclick="switchAdminSection('products')" title="Products" data-title="Products">
+                    <i data-lucide="package" class="nav-icon"></i>
+                    <span>Products</span>
+                </button>
+                <button class="admin-nav-item" onclick="switchAdminSection('customers')" title="Customer Details" data-title="Customer Details">
+                    <i data-lucide="users" class="nav-icon"></i>
+                    <span>Customer Details</span>
+                </button>
+                <button class="admin-nav-item" onclick="switchAdminSection('loyalty')" title="Loyalty Tracker" data-title="Loyalty Tracker">
+                    <i data-lucide="award" class="nav-icon"></i>
+                    <span>Loyalty Tracker</span>
+                </button>
+                <button class="admin-nav-item" onclick="switchAdminSection('qr')" title="Counter Standee" data-title="Counter Standee">
+                    <i data-lucide="qr-code" class="nav-icon"></i>
+                    <span>Counter Standee</span>
+                </button>
+                <button class="admin-nav-item" onclick="switchAdminSection('settings')" title="Settings" data-title="Settings">
+                    <i data-lucide="settings" class="nav-icon"></i>
+                    <span>Settings</span>
+                </button>
+            </nav>
+
+            <div class="admin-sidebar-footer">
+                <a href="index.html" target="_blank" class="admin-nav-item" style="font-size: 0.85rem;" title="View Storefront" data-title="View Storefront">
+                    <i data-lucide="external-link" class="nav-icon"></i>
+                    <span>View Storefront</span>
+                </a>
+                <button class="admin-nav-item" onclick="logoutAdmin()" style="color: #e74c3c;" title="Sign Out" data-title="Sign Out">
+                    <i data-lucide="log-out" class="nav-icon"></i>
+                    <span>Sign Out</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="admin-main">
+
+            <!-- SECTION 1: DASHBOARD -->
+            <section id="sec-dashboard" class="admin-section active">
+                <div class="admin-topbar">
+                    <div>
+                        <h1 class="admin-page-title">Daily Sales & Performance</h1>
+                        <p class="admin-page-subtitle">Real-time revenue, product-wise sales, and loyalty redemptions</p>
+                    </div>
+                    <div class="admin-top-actions">
+                        <select id="dashboardDateFilter" class="form-select" onchange="loadDashboardMetrics()" style="width: auto;">
+                            <option value="today">Today's Sales</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="all">All Time Sales</option>
+                        </select>
+                        <button class="btn btn-caramel btn-sm" onclick="switchAdminSection('pos')">
+                            <i data-lucide="plus" data-size="16"></i>
+                            <span>Record New Sale</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Total Sales Revenue</span>
+                            <span class="metric-icon"><i data-lucide="chart-no-axes-combined" data-size="20"></i></span>
+                        </div>
+                        <div class="metric-value" id="dashTotalRevenue">₹0</div>
+                        <div class="metric-sub" id="dashTxnCount">0 completed transactions</div>
+                    </div>
+
+                    <div class="metric-card cash">
+                        <div class="metric-header">
+                            <span class="metric-title">Cash Collection</span>
+                            <span class="metric-icon"><i data-lucide="banknote" data-size="20"></i></span>
+                        </div>
+                        <div class="metric-value" id="dashCashCollection">₹0</div>
+                        <div class="metric-sub">Physical cash in drawer</div>
+                    </div>
+
+                    <div class="metric-card online">
+                        <div class="metric-header">
+                            <span class="metric-title">Online Collection</span>
+                            <span class="metric-icon"><i data-lucide="credit-card" data-size="20"></i></span>
+                        </div>
+                        <div class="metric-value" id="dashOnlineCollection">₹0</div>
+                        <div class="metric-sub">UPI, QR & Card payments</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Total Cups Sold</span>
+                            <span class="metric-icon"><i data-lucide="coffee" data-size="20"></i></span>
+                        </div>
+                        <div class="metric-value" id="dashTotalPaidCups">0</div>
+                        <div class="metric-sub">Eligible paid tiramisu cups</div>
+                    </div>
+
+                    <div class="metric-card rewards">
+                        <div class="metric-header">
+                            <span class="metric-title">Rewards Claimed</span>
+                            <span class="metric-icon"><i data-lucide="gift" data-size="20"></i></span>
+                        </div>
+                        <div class="metric-value" id="dashRewardsClaimed">0</div>
+                        <div class="metric-sub">Free 150g cups redeemed</div>
+                    </div>
+                </div>
+
+                <!-- Product-wise Sales Summary Card -->
+                <div class="card">
+                    <div class="card-title">
+                        <span>Product-Wise Sales Quantities & Revenue</span>
+                        <span class="counter-tag" id="dashProductSummaryTag">Today</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>Cup Size</th>
+                                    <th>Unit Price</th>
+                                    <th>Cups Sold</th>
+                                    <th>Total Revenue</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashProductSummaryTbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions Card -->
+                <div class="card">
+                    <div class="card-title">
+                        <span>Recent Sales Transactions</span>
+                        <button class="btn btn-outline btn-sm" onclick="switchAdminSection('customers')">
+                            <span>View All Transactions</span>
+                            <i data-lucide="arrow-right" data-size="14"></i>
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Receipt ID</th>
+                                    <th>Date & Time</th>
+                                    <th>Customer</th>
+                                    <th>Items Purchased</th>
+                                    <th>Paid Cups</th>
+                                    <th>Amount</th>
+                                    <th>Payment</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashRecentSalesTbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: POS / RECORD SALE -->
+            <section id="sec-pos" class="admin-section">
+                <div class="admin-topbar">
+                    <div>
+                        <h1 class="admin-page-title">Point of Sale (POS Register)</h1>
+                        <p class="admin-page-subtitle">Select products, enter customer details, and save the sale</p>
+                    </div>
+                    <button class="btn btn-outline btn-sm" onclick="clearCart()">
+                        <i data-lucide="trash-2" data-size="14"></i>
+                        <span>Clear Cart</span>
+                    </button>
+                </div>
+
+                <div class="pos-grid">
+                    <!-- Products Catalog Grid -->
+                    <div>
+                        <h3 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--color-espresso); margin-bottom: 14px;">
+                            Select Tiramisu Cups
+                        </h3>
+                        <div class="pos-catalog" id="posProductCatalog">
+                            <!-- Populated with active products -->
+                        </div>
+                    </div>
+
+                    <!-- Cart and Checkout Panel -->
+                    <div class="pos-cart-panel">
+                        <h3 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--color-espresso); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <span>Current Order</span>
+                            <span class="pos-cart-badge" id="cartBadgeCount">0 items</span>
+                        </h3>
+
+                        <!-- Cart Items List -->
+                        <div class="cart-items-list" id="cartItemsList">
+                            <div style="text-align: center; padding: 30px 10px; color: var(--color-text-muted); font-size: 0.9rem;">
+                                <i data-lucide="shopping-cart" data-size="32" style="margin-bottom: 8px; color: var(--color-caramel);"></i>
+                                <div>Cart is empty. Select products on the left to start an order.</div>
+                            </div>
+                        </div>
+
+                        <!-- Cart Totals -->
+                        <div class="cart-total-box">
+                            <div class="cart-total-row">
+                                <span>Subtotal</span>
+                                <span id="cartSubtotal">₹0</span>
+                            </div>
+                            <div class="cart-total-row">
+                                <span>Eligible Paid Cups</span>
+                                <span id="cartEligibleCups">0 cups</span>
+                            </div>
+                            <div class="cart-total-row grand">
+                                <span>Total Payable</span>
+                                <span id="cartGrandTotal">₹0</span>
+                            </div>
+                        </div>
+
+                        <!-- Customer Details Input -->
+                        <div class="form-group customer-suggest-wrapper">
+                            <label class="form-label" for="posCustomerPhone">Customer Phone Number <span style="color: #e74c3c;">*</span></label>
+                            <input type="tel" id="posCustomerPhone" class="form-input" placeholder="e.g. 9876543210" oninput="handlePosPhoneInput(this.value)">
+                            <div class="form-help">Primary identifier used to track loyalty points automatically</div>
+                            
+                            <!-- Returning customer quick dropdown -->
+                            <div id="posCustomerSuggestions" class="customer-suggest-dropdown"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="posCustomerName">Customer Name (Optional)</label>
+                            <input type="text" id="posCustomerName" class="form-input" placeholder="e.g. Jay">
+                        </div>
+
+                        <!-- Smart Loyalty Alert Banner -->
+                        <div id="posLoyaltyAlert" class="pos-loyalty-banner">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                <i data-lucide="award" data-size="22" style="color: #b7793d;"></i>
+                                <div>
+                                    <strong style="color: #935116; font-size: 0.92rem;" id="posLoyaltyAlertTitle">Loyalty Reward Eligible!</strong>
+                                    <div style="font-size: 0.82rem; color: #784212;" id="posLoyaltyAlertDesc">Customer has 5 stamps and can claim 1 Free 150g Cup.</div>
+                                </div>
+                            </div>
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.88rem; font-weight: 700; color: #27ae60; cursor: pointer;">
+                                <input type="checkbox" id="posRedeemRewardCheckbox" onchange="toggleRewardInOrder(this.checked)">
+                                <span>Redeem 1 Free 150g Tiramisu with this order (₹0)</span>
+                            </label>
+                        </div>
+
+                        <!-- Payment Mode Selector -->
+                        <div class="form-group">
+                            <label class="form-label">Payment Mode <span style="color: #e74c3c;">*</span></label>
+                            <div class="payment-selector">
+                                <div class="payment-option active" id="payModeCash" onclick="setPosPaymentMode('Cash')">
+                                    <i data-lucide="banknote" data-size="18"></i>
+                                    <span>Cash</span>
+                                </div>
+                                <div class="payment-option" id="payModeOnline" onclick="setPosPaymentMode('Online')">
+                                    <i data-lucide="qr-code" data-size="18"></i>
+                                    <span>Online (UPI / QR)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="posSaleNotes">Order Notes (Optional)</label>
+                            <input type="text" id="posSaleNotes" class="form-input" placeholder="e.g. Extra cocoa, birthday gift">
+                        </div>
+
+                        <button class="btn btn-caramel btn-lg" style="width: 100%;" onclick="submitPosSale()" id="btnSaveSale">
+                            <i data-lucide="circle-check" data-size="18"></i>
+                            <span>Save Sale & Generate Receipt</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 3: PRODUCT MANAGEMENT -->
+            <section id="sec-products" class="admin-section">
+                <div class="admin-topbar">
+                    <div>
+                        <h1 class="admin-page-title">Product Catalog Management</h1>
+                        <p class="admin-page-subtitle">Add, edit, adjust prices, and toggle products on the public website</p>
+                    </div>
+                    <button class="btn btn-caramel btn-sm" onclick="openProductModal()">
+                        <i data-lucide="plus" data-size="16"></i>
+                        <span>Add New Product</span>
+                    </button>
+                </div>
+
+                <div class="card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Product Name</th>
+                                    <th>Weight</th>
+                                    <th>Price (₹)</th>
+                                    <th>Counts Towards Loyalty</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminProductsTableTbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 4: CUSTOMER DETAILS -->
+            <section id="sec-customers" class="admin-section">
+                <div class="admin-topbar">
+                    <div>
+                        <h1 class="admin-page-title">Customer Records & Purchase Histories</h1>
+                        <p class="admin-page-subtitle">View all registered customers, lifetime spend, visits, and transaction logs</p>
+                    </div>
+                    <div class="admin-top-actions">
+                        <input type="text" id="customerSearchInput" class="form-input" placeholder="Search by name or phone..." style="width: 260px;" oninput="renderCustomersTable()">
+                        <button class="btn btn-outline btn-sm" onclick="exportCustomersCSV()">
+                            <i data-lucide="download" data-size="16"></i>
+                            <span>Export CSV</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Phone Number</th>
+                                    <th>Total Paid Cups</th>
+                                    <th>Total Spent</th>
+                                    <th>Loyalty Progress</th>
+                                    <th>Rewards Claimed</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminCustomersTableTbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5: CUSTOMER LOYALTY TRACKER (ADMIN) -->
+            <section id="sec-loyalty" class="admin-section">
+                <div class="admin-topbar">
+                    <div>
+                        <h1 class="admin-page-title">Customer Loyalty & Reward Redemption</h1>
+                        <p class="admin-page-subtitle">Check customer stamps and record free 150g tiramisu redemptions</p>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="font-family: var(--font-heading); margin-bottom: 16px;">Search Customer Loyalty</h3>
+                    <div style="display: flex; gap: 12px; max-width: 600px; margin-bottom: 24px;">
+                        <input type="text" id="adminLoyaltySearchInput" class="form-input" placeholder="Enter customer phone or name (e.g. 9876543210 or Jay)">
+                        <button class="btn btn-caramel" onclick="adminTrackLoyalty()">
+                            <i data-lucide="search" data-size="16"></i>
+                            <span>Track</span>
+                        </button>
+                    </div>
+
+                    <!-- Admin Loyalty Result Card -->
+                    <div id="adminLoyaltyResult" style="display: none; background: var(--color-bg); border-radius: var(--radius-md); padding: 24px; border: 1.5px solid var(--color-border);">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+                            <div>
+                                <h2 style="font-family: var(--font-heading); color: var(--color-espresso); font-size: 1.6rem;" id="admResCustName">Jay</h2>
+                                <div style="color: var(--color-text-muted); font-size: 0.95rem;" id="admResCustPhone">Phone: 9876543210</div>
+                            </div>
+                            <div id="admResRedeemAction">
+                                <!-- Dynamic Redeem Button -->
+                            </div>
+                        </div>
+
+                        <!-- Status Alert Box -->
+                        <div id="admResStatusBox" class="loyalty-status-banner" style="margin-bottom: 20px;">
+                            <div class="status-icon-box" id="admResIcon"><i data-lucide="coffee"></i></div>
+                            <div class="status-details">
+                                <h3 id="admResTitle">Status</h3>
+                                <p id="admResDesc">Description</p>
+                            </div>
+                        </div>
+
+                        <!-- 5 Stamps Visual -->
+                        <div class="stamp-grid-large" id="admResStampsGrid"></div>
+
+                        <!-- Stats Row -->
+                        <div class="stats-tiles" style="margin-bottom: 24px;">
+                            <div class="stat-tile">
+                                <div class="stat-tile-val" id="admResTotalCups">0</div>
+                                <div class="stat-tile-label">Eligible Paid Cups</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="stat-tile-val" id="admResNeededCups">0</div>
+                                <div class="stat-tile-label">Cups Remaining</div>
+                            </div>
+                            <div class="stat-tile">
+                                <div class="stat-tile-val" id="admResClaimedCount">0</div>
+                                <div class="stat-tile-label">Total Rewards Claimed</div>
+                            </div>
+                        </div>
+
+                        <!-- Redemption History Table -->
+                        <div style="margin-top: 24px;">
+                            <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 10px;">Reward Redemption History</h4>
+                            <div id="admResRedemptionsList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Global Redemptions Audit Log -->
+                <div class="card">
+                    <div class="card-title">All Completed Loyalty Redemptions</div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Redemption ID</th>
+                                    <th>Date & Time</th>
+                                    <th>Customer Name</th>
+                                    <th>Customer Phone</th>
+                                    <th>Reward Item</th>
+                                    <th>Authorized Staff</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminAllRedemptionsTbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: COUNTER QR STANDEE -->
+            <section id="sec-qr" class="admin-section">
+                <div class="admin-topbar">
+                    <div>
+                        <h1 class="admin-page-title">Counter Display & QR Code Standee</h1>
+                        <p class="admin-page-subtitle">Print and place this standee at your billing counter for customers to track their rewards</p>
+                    </div>
+                    <button class="btn btn-caramel btn-sm" onclick="printStandee()">
+                        <i data-lucide="printer" data-size="16"></i>
+                        <span>Print Counter Standee</span>
+                    </button>
+                </div>
+
+                <div class="standee-preview printable-area" id="standeePrintArea">
+                    <img src="assets/tira-belle-logo.png" alt="TIRA Belle" class="standee-logo">
+                    <div class="standee-tagline">Little Layers • Big Love</div>
+                    
+                    <h2 class="standee-offer-title" id="standeeOfferTitle">
+                        Buy 5 Tiramisu Cups,<br>Get 1 Free 150g Cup!
+                    </h2>
+                    <p class="standee-offer-sub">
+                        Handcrafted with Italian Mascarpone & Belgian Cocoa
+                    </p>
+
+                    <!-- QR Code Target Canvas -->
+                    <div class="standee-qr-box">
+                        <div id="standeeQrContainer"></div>
+                    </div>
+
+                    <div class="standee-instructions">
+                        <i data-lucide="smartphone" data-size="18"></i>
+                        <span>Scan with phone camera to track your loyalty progress instantly!</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--color-text-light);">
+                        Counter Service: Yash Chauhan &amp; Tejas Chauhan • WhatsApp: 9373484198 / 8484870543
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 7: SETTINGS -->
+            <section id="sec-settings" class="admin-section">
+                <div class="admin-topbar">
+                    <div>
+                        <h1 class="admin-page-title">Store & Program Settings</h1>
+                        <p class="admin-page-subtitle">Configure business details, loyalty threshold, credentials, and backups</p>
+                    </div>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Business Info -->
+                    <div class="card">
+                        <div class="card-title">Business Information</div>
+                        <form id="settingsBusinessForm" onsubmit="event.preventDefault(); saveBusinessSettings();">
+                            <div class="form-group">
+                                <label class="form-label">Business Name</label>
+                                <input type="text" id="setBusinessName" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Tagline</label>
+                                <input type="text" id="setTagline" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Owner Name</label>
+                                <input type="text" id="setOwnerName" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">WhatsApp / Phone Number</label>
+                                <input type="text" id="setPhone" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">UPI ID (for Online Payments)</label>
+                                <input type="text" id="setUpiId" class="form-input">
+                            </div>
+                            <button type="submit" class="btn btn-caramel">
+                                <i data-lucide="save" data-size="16"></i>
+                                <span>Save Business Info</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Loyalty Program Rules & Security -->
+                    <div>
+                        <div class="card">
+                            <div class="card-title">Loyalty Program Configuration</div>
+                            <form id="settingsLoyaltyForm" onsubmit="event.preventDefault(); saveLoyaltySettings();">
+                                <div class="form-group">
+                                    <label class="form-label">Cups Needed for Free Reward (Threshold)</label>
+                                    <input type="number" id="setLoyaltyThreshold" class="form-input" min="1" max="50" required>
+                                    <div class="form-help" id="setLoyaltyRuleHelp">Current rule: 5 cups earns 1 free 150g tiramisu</div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Free Reward Item Name</label>
+                                    <input type="text" id="setRewardItemName" class="form-input" required>
+                                </div>
+                                <button type="submit" class="btn btn-caramel">
+                                    <i data-lucide="save" data-size="16"></i>
+                                    <span>Update Loyalty Rules</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-title">Admin Credentials</div>
+                            <form id="settingsCredentialsForm" onsubmit="event.preventDefault(); saveCredentialsSettings();">
+                                <div class="form-group">
+                                    <label class="form-label">Admin Username</label>
+                                    <input type="text" id="setAdminUser" class="form-input" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">New Password</label>
+                                    <input type="password" id="setAdminPass" class="form-input" placeholder="Leave blank to keep unchanged">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Quick 4-Digit PIN</label>
+                                    <input type="text" id="setAdminPin" class="form-input" maxlength="6">
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i data-lucide="shield-check" data-size="16"></i>
+                                    <span>Update Credentials</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Backup & Reset Section -->
+                <div class="card">
+                    <div class="card-title">Database Backup & Data Management</div>
+                    <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 20px;">
+                        All data is securely stored in your local browser storage. You can download complete JSON backups or restore previous data anytime.
+                    </p>
+                    <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                        <button class="btn btn-outline" onclick="downloadBackup()">
+                            <i data-lucide="download" data-size="16"></i>
+                            <span>Export Database Backup (JSON)</span>
+                        </button>
+                        <label class="btn btn-outline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                            <i data-lucide="upload" data-size="16"></i>
+                            <span>Restore from Backup (JSON)</span>
+                            <input type="file" id="importBackupFile" accept=".json" style="display: none;" onchange="importBackup(this)">
+                        </label>
+                        <button class="btn btn-outline" style="color: #c0392b; border-color: #f5b7b1;" onclick="resetDemoData()">
+                            <i data-lucide="refresh-cw" data-size="16"></i>
+                            <span>Reset to Default Demo Data</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Product Modal (Add/Edit) -->
+    <div id="productModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="productModalTitle">Add New Product</h3>
+                <button class="modal-close-btn" onclick="closeProductModal()" aria-label="Close modal">
+                    <i data-lucide="x" data-size="20"></i>
+                </button>
+            </div>
+            <form id="productForm" onsubmit="event.preventDefault(); saveProductSubmit();">
+                <div class="modal-body">
+                    <input type="hidden" id="prodEditId">
+                    <div class="form-group">
+                        <label class="form-label">Product Name <span style="color: #e74c3c;">*</span></label>
+                        <input type="text" id="prodName" class="form-input" placeholder="e.g. Tiramisu – 150 g" required>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                        <div class="form-group">
+                            <label class="form-label">Cup Size / Weight <span style="color: #e74c3c;">*</span></label>
+                            <input type="text" id="prodWeight" class="form-input" placeholder="e.g. 150 g" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Price (₹) <span style="color: #e74c3c;">*</span></label>
+                            <input type="number" id="prodPrice" class="form-input" placeholder="e.g. 150" min="0" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Image Path or URL</label>
+                        <input type="text" id="prodImage" class="form-input" placeholder="assets/tiramisu-150g.jpg">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea id="prodDesc" class="form-textarea" rows="3" placeholder="Handcrafted with espresso, mascarpone, and Belgian cocoa..."></textarea>
+                    </div>
+                    <div class="form-group" style="display: flex; gap: 24px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                            <input type="checkbox" id="prodActive" checked>
+                            <span>Active (Visible on Website)</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                            <input type="checkbox" id="prodCountsLoyalty" checked>
+                            <span>Counts toward Loyalty</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeProductModal()">Cancel</button>
+                    <button type="submit" class="btn btn-caramel">
+                        <i data-lucide="save" data-size="16"></i>
+                        <span>Save Product</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer History Modal / Drawer -->
+    <div id="customerHistoryModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 680px;">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title" id="custModalName">Customer History</h3>
+                    <div style="font-size: 0.85rem; color: var(--color-text-muted);" id="custModalPhone">Phone: 9876543210</div>
+                </div>
+                <button class="modal-close-btn" onclick="closeCustomerModal()" aria-label="Close modal">
+                    <i data-lucide="x" data-size="20"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="stats-tiles" style="margin-bottom: 24px;">
+                    <div class="stat-tile">
+                        <div class="stat-tile-val" id="custModalTotalSpend">₹0</div>
+                        <div class="stat-tile-label">Total Spend</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-val" id="custModalPaidCups">0</div>
+                        <div class="stat-tile-label">Paid Cups</div>
+                    </div>
+                    <div class="stat-tile">
+                        <div class="stat-tile-val" id="custModalStatus">0/5</div>
+                        <div class="stat-tile-label">Loyalty Status</div>
+                    </div>
+                </div>
+
+                <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: var(--color-espresso);">
+                    All Transactions
+                </h4>
+                <div id="custModalTxnList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-caramel" onclick="closeCustomerModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printable Receipt Modal -->
+    <div id="receiptModal" class="modal-overlay">
+        <div class="modal-card" style="max-width: 380px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Customer Receipt</h3>
+                <button class="modal-close-btn" onclick="closeReceiptModal()" aria-label="Close modal">
+                    <i data-lucide="x" data-size="20"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="padding: 16px;">
+                <div class="receipt-paper printable-area" id="receiptPrintableArea">
+                    <div class="receipt-header">
+                        <h3>TIRA Belle</h3>
+                        <p style="font-size: 0.75rem;">LITTLE LAYERS • BIG LOVE</p>
+                        <p style="font-size: 0.72rem; color: #555;">Handcrafted Italian Tiramisu</p>
+                        <p style="font-size: 0.72rem; margin-top: 4px;" id="recDate">14 Oct 2026, 02:00 PM</p>
+                        <p style="font-size: 0.72rem;">Receipt: <strong id="recId">TXN-1001</strong></p>
+                    </div>
+
+                    <div style="font-size: 0.75rem; margin-bottom: 10px;">
+                        <div>Customer: <strong id="recCustName">Jay</strong></div>
+                        <div>Phone: <span id="recCustPhone">9876543210</span></div>
+                        <div>Payment: <span id="recPayMode">Online (UPI)</span></div>
+                    </div>
+
+                    <div id="recItemsList" style="border-top: 1px dashed #aaa; padding-top: 8px;"></div>
+
+                    <div class="receipt-total-row">
+                        <span>TOTAL PAID</span>
+                        <span id="recGrandTotal">₹300</span>
+                    </div>
+
+                    <div style="margin-top: 10px; background: #fdfaf5; border: 1px dashed #c59b6d; padding: 8px; border-radius: 4px; text-align: center;">
+                        <div style="font-weight: bold; font-size: 0.78rem; color: #22120b;" id="recLoyaltyStatus">
+                            Loyalty: 5 / 5 Cups
+                        </div>
+                        <div style="font-size: 0.7rem; color: #666;" id="recLoyaltyNote">
+                            Eligible for 1 Free 150g Cup!
+                        </div>
+                    </div>
+
+                    <div class="receipt-footer">
+                        <p>Thank you for tasting the love in every spoon!</p>
+                        <p>Owners: Yash Chauhan &amp; Tejas Chauhan • 9373484198 / 8484870543</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeReceiptModal()">Done</button>
+                <button class="btn btn-caramel" onclick="printReceipt()">
+                    <i data-lucide="printer" data-size="16"></i>
+                    <span>Print Receipt</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="js/icons.js"></script>
+    <script src="js/qrcode.min.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/pwa.js"></script>
+</body>
+</html>
