@@ -107,5 +107,45 @@ class TestTiraBelleBusinessLogic(unittest.TestCase):
         self.assertEqual(total, 740)
         self.assertEqual(cash + online, total)
 
+    def test_customer_filtering(self):
+        # Sample customers and their transactions
+        customers = [
+            {'phone': '111', 'name': 'Jay'},
+            {'phone': '222', 'name': 'Priya'},
+            {'phone': '333', 'name': 'Rahul'},
+            {'phone': '444', 'name': 'Aisha'}
+        ]
+        sales = [
+            {'customerPhone': '111', 'paymentMode': 'Cash', 'items': [{'productName': 'Tiramisu 150g'}]},
+            {'customerPhone': '111', 'paymentMode': 'Online', 'items': [{'productName': 'Tiramisu 350g'}]},
+            {'customerPhone': '222', 'paymentMode': 'Online', 'items': [{'productName': 'Tiramisu 150g'}, {'productName': 'Tiramisu 350g'}]},
+            {'customerPhone': '333', 'paymentMode': 'Cash', 'items': [{'productName': 'Tiramisu 150g'}]},
+            {'customerPhone': '444', 'paymentMode': 'Cash', 'items': [{'productName': 'Tiramisu 150g'}]}
+        ]
+        redemptions = [
+            {'customerPhone': '333', 'rewardItem': '1 Free 150g Tiramisu'}
+        ]
+
+        # Test Cash filter
+        cash_phones = {s['customerPhone'] for s in sales if s['paymentMode'] == 'Cash'}
+        self.assertEqual(cash_phones, {'111', '333', '444'})
+
+        # Test Online filter
+        online_phones = {s['customerPhone'] for s in sales if s['paymentMode'] == 'Online'}
+        self.assertEqual(online_phones, {'111', '222'})
+
+        # Test 150g filter
+        p150_phones = {s['customerPhone'] for s in sales if any('150' in it['productName'] for it in s['items'])}
+        self.assertEqual(p150_phones, {'111', '222', '333', '444'})
+
+        # Test 350g filter
+        p350_phones = {s['customerPhone'] for s in sales if any('350' in it['productName'] for it in s['items'])}
+        self.assertEqual(p350_phones, {'111', '222'})
+
+        # Test Offer Claimed filter
+        claimed_phones = {r['customerPhone'] for r in redemptions}
+        self.assertEqual(claimed_phones, {'333'})
+
 if __name__ == '__main__':
     unittest.main()
+

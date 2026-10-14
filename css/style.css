@@ -1947,6 +1947,102 @@ a {
     color: #d68910;
 }
 
+/* Customer Filter Bar & Filter Chips */
+.customer-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 20px;
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    margin-bottom: 20px;
+}
+
+.customer-filter-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: 6px;
+}
+
+.filter-chip-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-border);
+    background: #fff;
+    color: var(--color-text-main);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.filter-chip:hover {
+    border-color: var(--color-caramel);
+    background: var(--color-caramel-subtle);
+    color: var(--color-espresso);
+}
+
+.filter-chip.active {
+    background: var(--color-espresso);
+    color: #fff;
+    border-color: var(--color-espresso);
+    box-shadow: 0 2px 6px rgba(36, 20, 14, 0.25);
+}
+
+.filter-chip.active .chip-badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+.filter-chip .chip-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-alt);
+    color: var(--color-text-muted);
+    font-size: 0.72rem;
+    padding: 1px 7px;
+    border-radius: var(--radius-pill);
+    margin-left: 2px;
+}
+
+.filter-chip-reset {
+    font-size: 0.8rem;
+    color: var(--color-caramel);
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-left: 8px;
+    padding: 4px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.filter-chip-reset:hover {
+    color: var(--color-espresso);
+}
+
 /* Printable Standee View */
 .standee-preview {
     max-width: 480px;

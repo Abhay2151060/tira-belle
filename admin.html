@@ -449,6 +449,49 @@
                     </div>
                 </div>
 
+                <!-- Customer Filter Toolbar -->
+                <div class="customer-filter-bar" id="customerFilterBar">
+                    <span class="customer-filter-label">
+                        <i data-lucide="filter" data-size="14"></i>
+                        <span>Filter By:</span>
+                    </span>
+                    <div class="filter-chip-group">
+                        <button type="button" class="filter-chip active" id="chipFilterAll" onclick="setCustomerFilter('all')">
+                            <span>All Customers</span>
+                            <span class="chip-badge" id="countFilterAll">0</span>
+                        </button>
+                        <button type="button" class="filter-chip" id="chipFilterCash" onclick="setCustomerFilter('cash')">
+                            <i data-lucide="banknote" data-size="14"></i>
+                            <span>Cash</span>
+                            <span class="chip-badge" id="countFilterCash">0</span>
+                        </button>
+                        <button type="button" class="filter-chip" id="chipFilterOnline" onclick="setCustomerFilter('online')">
+                            <i data-lucide="qr-code" data-size="14"></i>
+                            <span>Online</span>
+                            <span class="chip-badge" id="countFilterOnline">0</span>
+                        </button>
+                        <button type="button" class="filter-chip" id="chipFilter150g" onclick="setCustomerFilter('150g')">
+                            <i data-lucide="coffee" data-size="14"></i>
+                            <span>150 g</span>
+                            <span class="chip-badge" id="countFilter150g">0</span>
+                        </button>
+                        <button type="button" class="filter-chip" id="chipFilter350g" onclick="setCustomerFilter('350g')">
+                            <i data-lucide="layers" data-size="14"></i>
+                            <span>350 g</span>
+                            <span class="chip-badge" id="countFilter350g">0</span>
+                        </button>
+                        <button type="button" class="filter-chip" id="chipFilterClaimed" onclick="setCustomerFilter('claimed')">
+                            <i data-lucide="gift" data-size="14"></i>
+                            <span>Offer Claimed</span>
+                            <span class="chip-badge" id="countFilterClaimed">0</span>
+                        </button>
+                    </div>
+                    <button type="button" class="filter-chip-reset" id="resetCustomerFilterBtn" onclick="setCustomerFilter('all')" style="display: none;">
+                        <i data-lucide="rotate-ccw" data-size="12"></i>
+                        <span>Reset Filters</span>
+                    </button>
+                </div>
+
                 <div class="card">
                     <div class="table-responsive">
                         <table class="data-table">

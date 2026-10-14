@@ -221,6 +221,7 @@ function initAdminApp() {
     applySavedSidebarState();
     loadDashboardMetrics();
     renderPosCatalog();
+    renderCustomersTable();
     renderCounterQr();
     populateSettingsFields();
     if (window.lucide) window.lucide.createIcons();
@@ -750,31 +751,155 @@ window.saveProductSubmit = function() {
     renderPosCatalog();
 };
 
-// ----------------- SECTION 4: CUSTOMER DETAILS -----------------
+// ----------------- SECTION 4: CUSTOMER DETAILS & FILTERS -----------------
+let activeCustomerFilter = 'all'; // 'all' | 'cash' | 'online' | '150g' | '350g' | 'claimed'
+
+window.setCustomerFilter = function(filterKey) {
+    activeCustomerFilter = filterKey;
+
+    // Update active class on filter buttons
+    const filterIds = {
+        'all': 'chipFilterAll',
+        'cash': 'chipFilterCash',
+        'online': 'chipFilterOnline',
+        '150g': 'chipFilter150g',
+        '350g': 'chipFilter350g',
+        'claimed': 'chipFilterClaimed'
+    };
+
+    Object.values(filterIds).forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.classList.remove('active');
+    });
+
+    const activeBtn = document.getElementById(filterIds[filterKey]);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    const resetBtn = document.getElementById('resetCustomerFilterBtn');
+    if (resetBtn) {
+        resetBtn.style.display = filterKey === 'all' ? 'none' : 'inline-flex';
+    }
+
+    renderCustomersTable();
+};
+
 window.renderCustomersTable = function() {
     const tbody = document.getElementById('adminCustomersTableTbody');
     if (!tbody) return;
-    const query = document.getElementById('customerSearchInput')?.value.trim() || '';
+    const query = document.getElementById('customerSearchInput')?.value.trim().toLowerCase() || '';
+    const cleanDigits = query.replace(/\D/g, '');
     const customers = window.TiraDB.getCustomers();
     const sales = window.TiraDB.getSales();
+    const redemptions = window.TiraDB.getRedemptions();
     const settings = window.TiraDB.getSettings();
     const curr = settings.currency || '₹';
 
-    const filtered = customers.filter(c => {
-        if (!query) return true;
-        return c.name.toLowerCase().includes(query.toLowerCase()) || c.phone.includes(query);
+    // Map each customer to their sales, redemptions, and criteria
+    const customerMetaList = customers.map(c => {
+        const cleanPhone = (c.phone || '').trim().replace(/\D/g, '');
+        const custSales = sales.filter(s => (s.customerPhone || '').replace(/\D/g, '') === cleanPhone);
+        const custRedemptions = redemptions.filter(r => (r.customerPhone || '').replace(/\D/g, '') === cleanPhone);
+        const loyalty = window.TiraDB.getCustomerLoyalty(c.phone);
+        const totalSpend = custSales.reduce((acc, s) => acc + (s.totalAmount || 0), 0);
+
+        // Check payment modes used
+        const hasCash = custSales.some(s => s.paymentMode === 'Cash');
+        const hasOnline = custSales.some(s => s.paymentMode === 'Online');
+
+        // Check products purchased (150g vs 350g)
+        let has150g = false;
+        let has350g = false;
+        custSales.forEach(s => {
+            (s.items || []).forEach(it => {
+                const pid = (it.productId || '').toLowerCase();
+                const pname = (it.productName || '').toLowerCase();
+                const pweight = (it.weight || '').toLowerCase();
+                if (pid.includes('150') || pname.includes('150') || pweight.includes('150')) {
+                    has150g = true;
+                }
+                if (pid.includes('350') || pname.includes('350') || pweight.includes('350')) {
+                    has350g = true;
+                }
+            });
+        });
+
+        // Check if offer/reward claimed
+        const hasClaimed = custRedemptions.length > 0 || (loyalty.claimedCount || 0) > 0;
+
+        return {
+            customer: c,
+            cleanPhone,
+            loyalty,
+            totalSpend,
+            hasCash,
+            hasOnline,
+            has150g,
+            has350g,
+            hasClaimed
+        };
+    });
+
+    // Compute badges / counts for each filter chip
+    const countAll = customerMetaList.length;
+    const countCash = customerMetaList.filter(item => item.hasCash).length;
+    const countOnline = customerMetaList.filter(item => item.hasOnline).length;
+    const count150g = customerMetaList.filter(item => item.has150g).length;
+    const count350g = customerMetaList.filter(item => item.has350g).length;
+    const countClaimed = customerMetaList.filter(item => item.hasClaimed).length;
+
+    const elCountAll = document.getElementById('countFilterAll');
+    const elCountCash = document.getElementById('countFilterCash');
+    const elCountOnline = document.getElementById('countFilterOnline');
+    const elCount150g = document.getElementById('countFilter150g');
+    const elCount350g = document.getElementById('countFilter350g');
+    const elCountClaimed = document.getElementById('countFilterClaimed');
+
+    if (elCountAll) elCountAll.textContent = countAll;
+    if (elCountCash) elCountCash.textContent = countCash;
+    if (elCountOnline) elCountOnline.textContent = countOnline;
+    if (elCount150g) elCount150g.textContent = count150g;
+    if (elCount350g) elCount350g.textContent = count350g;
+    if (elCountClaimed) elCountClaimed.textContent = countClaimed;
+
+    // Filter by search query + active category filter
+    const filtered = customerMetaList.filter(item => {
+        // Search text filter
+        if (query) {
+            const matchName = (item.customer.name || '').toLowerCase().includes(query);
+            const matchPhone = cleanDigits.length >= 2 && item.cleanPhone.includes(cleanDigits);
+            if (!matchName && !matchPhone) return false;
+        }
+
+        // Active criteria filter
+        if (activeCustomerFilter === 'cash') return item.hasCash;
+        if (activeCustomerFilter === 'online') return item.hasOnline;
+        if (activeCustomerFilter === '150g') return item.has150g;
+        if (activeCustomerFilter === '350g') return item.has350g;
+        if (activeCustomerFilter === 'claimed') return item.hasClaimed;
+        return true;
     });
 
     tbody.innerHTML = '';
     if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--color-text-muted);">No customers found matching search query.</td></tr>`;
+        let emptyMsg = 'No customer records found matching search query.';
+        if (activeCustomerFilter !== 'all') {
+            const filterLabelMap = {
+                'cash': 'Cash payments',
+                'online': 'Online payments',
+                '150g': '150 g Tiramisu purchases',
+                '350g': '350 g Tiramisu purchases',
+                'claimed': 'Claimed Loyalty Offers'
+            };
+            emptyMsg = `No customers found for filter: <strong>${filterLabelMap[activeCustomerFilter] || activeCustomerFilter}</strong>.`;
+        }
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--color-text-muted); padding: 24px;">${emptyMsg}</td></tr>`;
         return;
     }
 
-    filtered.forEach(c => {
-        const loyalty = window.TiraDB.getCustomerLoyalty(c.phone);
-        const custSales = sales.filter(s => s.customerPhone === c.phone);
-        const totalSpend = custSales.reduce((acc, s) => acc + s.totalAmount, 0);
+    filtered.forEach(item => {
+        const c = item.customer;
+        const loyalty = item.loyalty;
+        const totalSpend = item.totalSpend;
         const safeName = typeof escapeHtml === 'function' ? escapeHtml(c.name) : c.name;
         const safePhone = typeof escapeHtml === 'function' ? escapeHtml(c.phone) : c.phone;
 
@@ -789,7 +914,11 @@ window.renderCustomersTable = function() {
                     ${loyalty.isEligible ? 'Eligible for Free Reward' : `${loyalty.currentCycleProgress}/${loyalty.threshold} Cups`}
                 </span>
             </td>
-            <td>${loyalty.claimedCount} free cup${loyalty.claimedCount !== 1 ? 's' : ''}</td>
+            <td>
+                ${item.hasClaimed 
+                    ? `<span class="badge badge-success" style="font-weight: 700;"><i data-lucide="gift" data-size="12"></i> ${loyalty.claimedCount} free cup${loyalty.claimedCount !== 1 ? 's' : ''} claimed</span>` 
+                    : `<span style="color: var(--color-text-muted); font-size: 0.82rem;">0 claimed</span>`}
+            </td>
             <td>
                 <button class="btn btn-outline btn-sm" onclick="viewCustomerHistory('${safePhone}')" style="display: inline-flex; align-items: center; gap: 4px;">
                     <i data-lucide="history" data-size="14"></i>
