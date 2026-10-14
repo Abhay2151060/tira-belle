@@ -97,6 +97,10 @@
                             <i data-lucide="search" data-size="18"></i>
                             <span>Track Offer</span>
                         </button>
+                        <button type="button" class="btn btn-outline btn-lg" id="btnTrackerClear" onclick="window.clearLoyaltyTracker()" title="Clear search">
+                            <i data-lucide="rotate-ccw" data-size="18"></i>
+                            <span>Clear</span>
+                        </button>
                     </div>
                     <div class="quick-suggestions">
                         <span>Quick demo lookup:</span>
@@ -234,10 +238,10 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/icons.js?v=3"></script>
-    <script src="js/pwa.js?v=3"></script>
-    <script src="js/db.js?v=3"></script>
-    <script src="js/tracker.js?v=3"></script>
+    <script src="js/icons.js?v=4"></script>
+    <script src="js/pwa.js?v=4"></script>
+    <script src="js/db.js?v=4"></script>
+    <script src="js/tracker.js?v=4"></script>
     <script>
         function fillAndSearch(query) {
             document.getElementById('trackerInput').value = query;

@@ -8,15 +8,30 @@
 
     // 1. Service Worker Registration
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => {
-                    console.log('TIRA Belle PWA ServiceWorker registered with scope:', reg.scope);
-                })
-                .catch(err => {
-                    console.warn('TIRA Belle ServiceWorker registration failed:', err);
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            // Development environment: unregister service worker and clear stale caches
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                for (let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+            if ('caches' in window) {
+                caches.keys().then(keys => {
+                    keys.forEach(key => caches.delete(key));
                 });
-        });
+            }
+        } else {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => {
+                        console.log('TIRA Belle PWA ServiceWorker registered with scope:', reg.scope);
+                        reg.update();
+                    })
+                    .catch(err => {
+                        console.warn('TIRA Belle ServiceWorker registration failed:', err);
+                    });
+            });
+        }
     }
 
     // 2. Install Prompt Handling

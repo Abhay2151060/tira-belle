@@ -292,9 +292,9 @@
                         <h1 class="admin-page-title">Point of Sale (POS Register)</h1>
                         <p class="admin-page-subtitle">Select products, enter customer details, and save the sale</p>
                     </div>
-                    <button class="btn btn-outline btn-sm" onclick="clearCart()">
-                        <i data-lucide="trash-2" data-size="14"></i>
-                        <span>Clear Cart</span>
+                    <button class="btn btn-outline btn-sm" onclick="resetNewSale()" title="Clear all cart items and customer details">
+                        <i data-lucide="rotate-ccw" data-size="14"></i>
+                        <span>Clear Sale</span>
                     </button>
                 </div>
 
@@ -313,7 +313,13 @@
                     <div class="pos-cart-panel">
                         <h3 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--color-espresso); margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;">
                             <span>Current Order</span>
-                            <span class="pos-cart-badge" id="cartBadgeCount">0 items</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="pos-cart-badge" id="cartBadgeCount">0 items</span>
+                                <button type="button" class="btn btn-outline btn-sm" id="btnPosResetSaleHeader" onclick="resetNewSale()" title="Clear sale and reset all fields" style="padding: 3px 8px; font-size: 0.78rem; height: auto;">
+                                    <i data-lucide="rotate-ccw" data-size="12"></i>
+                                    <span>Clear</span>
+                                </button>
+                            </div>
                         </h3>
 
                         <!-- Cart Items List -->
@@ -390,10 +396,16 @@
                             <input type="text" id="posSaleNotes" class="form-input" placeholder="e.g. Extra cocoa, birthday gift">
                         </div>
 
-                        <button class="btn btn-caramel btn-lg" style="width: 100%;" onclick="submitPosSale()" id="btnSaveSale">
-                            <i data-lucide="circle-check" data-size="18"></i>
-                            <span>Save Sale & Generate Receipt</span>
-                        </button>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button type="button" class="btn btn-outline" style="flex: 1;" onclick="resetNewSale()" title="Clear cart and customer details">
+                                <i data-lucide="rotate-ccw" data-size="16"></i>
+                                <span>Clear</span>
+                            </button>
+                            <button class="btn btn-caramel btn-lg" style="flex: 2.5;" onclick="submitPosSale()" id="btnSaveSale">
+                                <i data-lucide="circle-check" data-size="18"></i>
+                                <span>Save Sale & Generate Receipt</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -527,10 +539,14 @@
                 <div class="card">
                     <h3 style="font-family: var(--font-heading); margin-bottom: 16px;">Search Customer Loyalty</h3>
                     <div style="display: flex; gap: 12px; max-width: 600px; margin-bottom: 24px;">
-                        <input type="text" id="adminLoyaltySearchInput" class="form-input" placeholder="Enter customer phone or name (e.g. 9876543210 or Jay)">
+                        <input type="text" id="adminLoyaltySearchInput" class="form-input" placeholder="Enter customer phone or name (e.g. 9876543210 or Jay)" onkeydown="if(event.key==='Enter') adminTrackLoyalty()">
                         <button class="btn btn-caramel" onclick="adminTrackLoyalty()">
                             <i data-lucide="search" data-size="16"></i>
                             <span>Track</span>
+                        </button>
+                        <button type="button" class="btn btn-outline" id="adminLoyaltyClearBtn" onclick="adminClearLoyaltyTracker()" title="Clear search and results">
+                            <i data-lucide="rotate-ccw" data-size="16"></i>
+                            <span>Clear</span>
                         </button>
                     </div>
 
@@ -1007,10 +1023,10 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/icons.js?v=3"></script>
-    <script src="js/qrcode.min.js?v=3"></script>
-    <script src="js/db.js?v=3"></script>
-    <script src="js/admin.js?v=3"></script>
-    <script src="js/pwa.js?v=3"></script>
+    <script src="js/icons.js?v=4"></script>
+    <script src="js/qrcode.min.js?v=4"></script>
+    <script src="js/db.js?v=4"></script>
+    <script src="js/admin.js?v=4"></script>
+    <script src="js/pwa.js?v=4"></script>
 </body>
 </html>

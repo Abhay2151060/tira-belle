@@ -20,9 +20,11 @@ function showToast(message, type = 'info') {
     if (type === 'warning') iconName = 'triangle-alert';
     if (type === 'error') iconName = 'circle-x';
 
-    const iconHtml = window.lucide ? window.lucide.renderIcon(iconName, { size: 18 }) : '';
-    toast.innerHTML = `<span class="toast-icon" style="display: flex; align-items: center;">${iconHtml}</span> <div>${message}</div>`;
+    toast.innerHTML = `<span class="toast-icon" style="display: flex; align-items: center;"><i data-lucide="${iconName}" data-size="18"></i></span> <div>${message}</div>`;
     container.appendChild(toast);
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transform = 'translateY(10px)';
@@ -373,11 +375,46 @@ window.updateCartQty = function(productId, delta) {
     updateCartUI();
 };
 
-window.clearCart = function() {
+window.resetNewSale = function(skipConfirm = false) {
+    if (!skipConfirm) {
+        const confirmed = window.confirm('Are you sure you want to clear the current sale? This will remove all items from the cart and clear all entered customer details.');
+        if (!confirmed) return;
+    }
+
     currentCart = [];
-    document.getElementById('posRedeemRewardCheckbox').checked = false;
-    document.getElementById('posLoyaltyAlert').classList.remove('active');
+    const phoneInput = document.getElementById('posCustomerPhone');
+    const nameInput = document.getElementById('posCustomerName');
+    const notesInput = document.getElementById('posSaleNotes');
+    if (phoneInput) phoneInput.value = '';
+    if (nameInput) nameInput.value = '';
+    if (notesInput) notesInput.value = '';
+
+    const suggestEl = document.getElementById('posCustomerSuggestions');
+    if (suggestEl) {
+        suggestEl.innerHTML = '';
+        suggestEl.style.display = 'none';
+    }
+
+    const alertBanner = document.getElementById('posLoyaltyAlert');
+    if (alertBanner) alertBanner.classList.remove('active');
+
+    const redeemCheckbox = document.getElementById('posRedeemRewardCheckbox');
+    if (redeemCheckbox) redeemCheckbox.checked = false;
+
+    if (typeof setPosPaymentMode === 'function') {
+        setPosPaymentMode('Cash');
+    }
+
     updateCartUI();
+
+    if (!skipConfirm) {
+        showToast('New sale cleared and reset to default.', 'info');
+        if (phoneInput) phoneInput.focus();
+    }
+};
+
+window.clearCart = function() {
+    window.resetNewSale(false);
 };
 
 function updateCartUI() {
@@ -564,11 +601,7 @@ window.submitPosSale = function() {
         viewReceipt(result.sale.id);
 
         // Reset cart and inputs
-        clearCart();
-        document.getElementById('posCustomerPhone').value = '';
-        document.getElementById('posCustomerName').value = '';
-        document.getElementById('posSaleNotes').value = '';
-        document.getElementById('posLoyaltyAlert').classList.remove('active');
+        resetNewSale(true);
 
         // Refresh dashboard metrics
         loadDashboardMetrics();
@@ -1044,6 +1077,15 @@ window.adminTrackLoyalty = function() {
     }
 
     renderAdminLoyaltyCard(customer.phone);
+};
+
+window.adminClearLoyaltyTracker = function() {
+    const input = document.getElementById('adminLoyaltySearchInput');
+    const resultBox = document.getElementById('adminLoyaltyResult');
+    if (input) input.value = '';
+    if (resultBox) resultBox.style.display = 'none';
+    if (input) input.focus();
+    showToast('Customer loyalty tracker cleared.', 'info');
 };
 
 function renderAdminLoyaltyCard(phone) {

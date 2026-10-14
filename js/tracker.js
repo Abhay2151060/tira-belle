@@ -252,3 +252,17 @@ function renderLoyaltyResult(loyalty) {
     resultPanel.classList.add('active');
     resultPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+window.clearLoyaltyTracker = function() {
+    const input = document.getElementById('trackerInput');
+    const resultPanel = document.getElementById('trackerResultPanel');
+    const notFound = document.getElementById('trackerNotFound');
+    const ambiguous = document.getElementById('ambiguousCustomersList');
+
+    if (input) input.value = '';
+    if (resultPanel) resultPanel.classList.remove('active');
+    if (notFound) notFound.style.display = 'none';
+    if (ambiguous) ambiguous.style.display = 'none';
+    if (input) input.focus();
+    showToast('Loyalty tracker cleared.', 'info');
+};
