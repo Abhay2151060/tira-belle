@@ -763,18 +763,18 @@ class TiraBelleDB {
         const customerRedemptions = this.data.redemptions.filter(r => (r.customerPhone || '').replace(/\D/g, '') === cleanPhone);
         const claimedCount = customerRedemptions.length;
 
-        // Total lifetime rewards earned based on completed separate purchase transactions
-        const totalEarnedRewards = Math.floor(completedPurchasesCount / threshold);
+        // Total lifetime rewards earned based on eligible cups purchased
+        const totalEarnedRewards = Math.floor(totalCupsPurchased / threshold);
 
         // Available rewards that can be redeemed right now
         const availableRewards = Math.max(0, totalEarnedRewards - claimedCount);
         const isEligible = availableRewards > 0;
 
-        // Effective purchases active in the current cycle after accounting for claimed rewards
-        const purchasesSinceClaimed = Math.max(0, completedPurchasesCount - (claimedCount * threshold));
-        // Current cycle progress (if eligible, customer reached the threshold; otherwise remainder of active purchases)
-        const currentCycleProgress = isEligible ? threshold : (purchasesSinceClaimed % threshold);
-        const purchasesRemaining = isEligible ? 0 : (threshold - currentCycleProgress);
+        // Effective cups active in the current cycle after accounting for claimed rewards
+        const cupsSinceClaimed = Math.max(0, totalCupsPurchased - (claimedCount * threshold));
+        // Current cycle progress (if eligible, customer reached the threshold; otherwise remainder of active cups)
+        const currentCycleProgress = isEligible ? threshold : (cupsSinceClaimed % threshold);
+        const cupsRemaining = isEligible ? 0 : (threshold - currentCycleProgress);
 
         return {
             customer: customer || { phone: cleanPhone, name: 'Guest' },
@@ -787,7 +787,8 @@ class TiraBelleDB {
             availableRewards,
             isEligible,
             currentCycleProgress,
-            purchasesRemaining: isEligible ? 0 : purchasesRemaining,
+            cupsRemaining,
+            purchasesRemaining: cupsRemaining, // Backward compatibility for UI bindings
             redemptions: customerRedemptions.sort((a, b) => new Date(b.redeemedAt) - new Date(a.redeemedAt)),
             salesHistory: customerSales.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
         };

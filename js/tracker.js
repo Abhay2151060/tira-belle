@@ -109,7 +109,7 @@ window.searchLoyalty = function(specifiedPhone = null) {
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <span class="badge ${loyalty.isEligible ? 'badge-success' : 'badge-warning'}">
-                                ${loyalty.isEligible ? 'Eligible for Free Reward' : `${loyalty.currentCycleProgress}/${loyalty.threshold} Purchases`}
+                                ${loyalty.isEligible ? 'Eligible for Free Reward' : `${loyalty.currentCycleProgress}/${loyalty.threshold} Cups`}
                             </span>
                             <span class="btn btn-sm btn-outline">Select</span>
                         </div>
@@ -157,23 +157,23 @@ function renderLoyaltyResult(loyalty) {
         banner.className = 'loyalty-status-banner status-eligible';
         icon.innerHTML = `<i data-lucide="award" data-size="32"></i>`;
         title.innerHTML = `Congratulations! You've Earned ${safeRewardItem}!`;
-        desc.innerHTML = `You have completed all <strong>${loyalty.threshold} eligible purchases</strong>. Visit the TIRA Belle counter anytime to claim your handcrafted free dessert!`;
+        desc.innerHTML = `You have purchased all <strong>${loyalty.threshold} eligible cups</strong>. Visit the TIRA Belle counter anytime to claim your handcrafted free dessert!`;
     } else {
         banner.className = 'loyalty-status-banner status-in-progress';
         icon.innerHTML = `<i data-lucide="coffee" data-size="32"></i>`;
-        const remaining = loyalty.purchasesRemaining;
-        title.textContent = `${remaining} More Purchase${remaining > 1 ? 's' : ''} To Go!`;
-        desc.innerHTML = `You have completed <strong>${loyalty.currentCycleProgress} out of ${loyalty.threshold}</strong> eligible purchases in this cycle. Complete ${remaining} more to claim your free reward!`;
+        const remaining = loyalty.cupsRemaining !== undefined ? loyalty.cupsRemaining : loyalty.purchasesRemaining;
+        title.textContent = `${remaining} More Cup${remaining > 1 ? 's' : ''} To Go!`;
+        desc.innerHTML = `You have purchased <strong>${loyalty.currentCycleProgress} out of ${loyalty.threshold}</strong> eligible cups in this cycle. Buy ${remaining} more to claim your free reward!`;
     }
 
     // Stamp Fraction text
     const fraction = document.getElementById('resStampFraction');
     if (fraction) {
         if (loyalty.isEligible) {
-            fraction.textContent = `${loyalty.threshold} / ${loyalty.threshold} Purchases • READY!`;
+            fraction.textContent = `${loyalty.threshold} / ${loyalty.threshold} Cups • READY!`;
             fraction.style.color = '#27ae60';
         } else {
-            fraction.textContent = `${loyalty.currentCycleProgress} / ${loyalty.threshold} Purchases`;
+            fraction.textContent = `${loyalty.currentCycleProgress} / ${loyalty.threshold} Cups`;
             fraction.style.color = 'var(--color-caramel)';
         }
     }
@@ -198,7 +198,7 @@ function renderLoyaltyResult(loyalty) {
 
             box.innerHTML = `
                 <div class="stamp-img">${stampIcon}</div>
-                <div class="stamp-num-badge">${isFinalReward ? 'FREE' : `Purchase #${i}`}</div>
+                <div class="stamp-num-badge">${isFinalReward ? 'FREE' : `Cup #${i}`}</div>
             `;
             stampsGrid.appendChild(box);
         }
