@@ -1313,9 +1313,17 @@ window.importBackup = function(fileInput) {
 };
 
 window.resetDemoData = function() {
-    if (confirm('Are you sure you want to reset all data back to the default demo state? All custom transactions will be replaced with initial demo records.')) {
+    if (confirm('Are you sure you want to load sample demo data? All current records will be replaced with initial demo records.')) {
         window.TiraDB.resetToDemoData();
-        showToast('Data reset to default demo records.', 'info');
+        showToast('Demo data loaded successfully.', 'info');
+        setTimeout(() => window.location.reload(), 1000);
+    }
+};
+
+window.clearAllDataExceptProducts = function() {
+    if (confirm('Are you sure you want to clear all customer records, sales, and redemptions? The two products and business settings will be preserved.')) {
+        window.TiraDB.clearAllExceptProducts();
+        showToast('All transaction and customer data cleared. Preserved 2 products.', 'success');
         setTimeout(() => window.location.reload(), 1000);
     }
 };

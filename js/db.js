@@ -98,7 +98,11 @@ function getTodayDateString(offsetDays = 0) {
     return d.toISOString().split('T')[0];
 }
 
-const DEFAULT_CUSTOMERS = [
+const DEFAULT_CUSTOMERS = [];
+const DEFAULT_SALES = [];
+const DEFAULT_REDEMPTIONS = [];
+
+const DEMO_CUSTOMERS = [
     {
         phone: '9876543210',
         name: 'Jay',
@@ -121,13 +125,8 @@ const DEFAULT_CUSTOMERS = [
     }
 ];
 
-// Seed sample sales matching the user prompt scenario
-// Seed sample sales matching the user prompt scenario:
-// Jay: 5 completed purchase transactions (Total 8 cups bought, eligible for free reward!)
-// Priya: 3 completed purchase transactions (3/5 purchases, 0 claimed)
-// Rahul: 7 completed purchase transactions (12 cups total; 1 claimed reward -> 2/5 progress toward reward 2)
-// Aisha: 1 completed purchase transaction (1/5 purchases, 0 claimed)
-const DEFAULT_SALES = [
+// Demo sample sales for optional testing
+const DEMO_SALES = [
     // --- Jay's 5 Transactions ---
     {
         id: 'TXN-1001',
@@ -337,8 +336,8 @@ const DEFAULT_SALES = [
     }
 ];
 
-// Rahul claimed 1 reward in the past
-const DEFAULT_REDEMPTIONS = [
+// Rahul claimed 1 reward in the past (demo)
+const DEMO_REDEMPTIONS = [
     {
         id: 'RDM-501',
         customerPhone: '9845098765',
@@ -354,6 +353,15 @@ const DEFAULT_REDEMPTIONS = [
 class TiraBelleDB {
     constructor() {
         this.data = this.load();
+        this.checkOneTimeCleanData();
+    }
+
+    checkOneTimeCleanData() {
+        try {
+            if (!localStorage.getItem('TIRA_CLEAN_PRODUCTS_ONLY_INITIALIZED')) {
+                this.clearAllExceptProducts();
+            }
+        } catch (e) {}
     }
 
     load() {
@@ -378,25 +386,12 @@ class TiraBelleDB {
                         this.save();
                     });
                 }
-                // If stored sales has legacy demo records (where Jay had fewer than 5 transactions or Rahul had fewer than 7),
-                // automatically synchronize to the corrected transaction dataset
-                let currentSales = parsed.sales || DEFAULT_SALES;
-                const jaySales = currentSales.filter(s => (s.customerPhone || '').replace(/\D/g, '') === '9876543210');
-                const rahulSales = currentSales.filter(s => (s.customerPhone || '').replace(/\D/g, '') === '9845098765');
-                if (jaySales.length < 5 || rahulSales.length < 7 || currentSales.length <= 8) {
-                    currentSales = [...DEFAULT_SALES];
-                    try {
-                        const updated = { ...parsed, sales: currentSales };
-                        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(updated));
-                    } catch (e) {}
-                }
-
                 return {
                     settings: settings,
                     products: parsed.products && parsed.products.length ? parsed.products : DEFAULT_PRODUCTS,
-                    customers: parsed.customers || DEFAULT_CUSTOMERS,
-                    sales: currentSales,
-                    redemptions: parsed.redemptions || DEFAULT_REDEMPTIONS
+                    customers: Array.isArray(parsed.customers) ? parsed.customers : [],
+                    sales: Array.isArray(parsed.sales) ? parsed.sales : [],
+                    redemptions: Array.isArray(parsed.redemptions) ? parsed.redemptions : []
                 };
             }
         } catch (e) {
@@ -405,9 +400,9 @@ class TiraBelleDB {
         const initial = {
             settings: { ...DEFAULT_SETTINGS },
             products: [...DEFAULT_PRODUCTS],
-            customers: [...DEFAULT_CUSTOMERS],
-            sales: [...DEFAULT_SALES],
-            redemptions: [...DEFAULT_REDEMPTIONS]
+            customers: [],
+            sales: [],
+            redemptions: []
         };
         this.save(initial);
         return initial;
@@ -423,9 +418,40 @@ class TiraBelleDB {
     }
 
     resetToDemoData() {
-        localStorage.removeItem(STORAGE_KEY);
-        this.data = this.load();
-        return this.data;
+        const demoData = {
+            settings: { ...DEFAULT_SETTINGS },
+            products: [...DEFAULT_PRODUCTS],
+            customers: [...DEMO_CUSTOMERS],
+            sales: [...DEMO_SALES],
+            redemptions: [...DEMO_REDEMPTIONS]
+        };
+        this.save(demoData);
+        return demoData;
+    }
+
+    clearAllExceptProducts() {
+        let prodsToKeep = [...DEFAULT_PRODUCTS];
+        if (this.data && Array.isArray(this.data.products) && this.data.products.length >= 2) {
+            prodsToKeep = this.data.products.slice(0, 2);
+        }
+
+        try {
+            localStorage.clear();
+        } catch (e) {}
+
+        const cleanData = {
+            settings: { ...DEFAULT_SETTINGS, ...(this.data?.settings || {}) },
+            products: prodsToKeep,
+            customers: [],
+            sales: [],
+            redemptions: []
+        };
+        this.data = cleanData;
+        this.save(cleanData);
+        try {
+            localStorage.setItem('TIRA_CLEAN_PRODUCTS_ONLY_INITIALIZED', 'true');
+        } catch (e) {}
+        return cleanData;
     }
 
     // ----------------- SETTINGS & AUTHENTICATION -----------------

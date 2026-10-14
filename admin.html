@@ -752,9 +752,13 @@
                             <span>Restore from Backup (JSON)</span>
                             <input type="file" id="importBackupFile" accept=".json" style="display: none;" onchange="importBackup(this)">
                         </label>
-                        <button class="btn btn-outline" style="color: #c0392b; border-color: #f5b7b1;" onclick="resetDemoData()">
+                        <button class="btn btn-outline" style="color: #c0392b; border-color: #f5b7b1;" onclick="clearAllDataExceptProducts()">
+                            <i data-lucide="trash-2" data-size="16"></i>
+                            <span>Clear All Data (Keep 2 Products Only)</span>
+                        </button>
+                        <button class="btn btn-outline" onclick="resetDemoData()">
                             <i data-lucide="refresh-cw" data-size="16"></i>
-                            <span>Reset to Default Demo Data</span>
+                            <span>Load Demo Sample Data</span>
                         </button>
                     </div>
                 </div>
