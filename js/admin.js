@@ -217,6 +217,7 @@ window.switchAdminSection = function(sectionId) {
     else if (sectionId === 'customers') renderCustomersTable();
     else if (sectionId === 'loyalty') renderAdminLoyaltyAudit();
     else if (sectionId === 'qr') renderCounterQr();
+    else if (sectionId === 'reviews') renderAdminReviews();
     else if (sectionId === 'settings') populateSettingsFields();
 
     if (window.lucide) window.lucide.createIcons();
@@ -1564,6 +1565,168 @@ window.clearAllDataExceptProducts = async function() {
         setTimeout(() => window.location.reload(), 800);
     }
 };
+
+// ==========================================================================
+// CUSTOMER REVIEWS MANAGEMENT
+// ==========================================================================
+window.renderAdminReviews = function() {
+    if (!window.TiraDB) return;
+    const allReviews = window.TiraDB.getReviews() || [];
+    
+    // Update summary metrics
+    const totalCountEl = document.getElementById('adminReviewTotalCount');
+    const avgRatingEl = document.getElementById('adminReviewAvgRating');
+    const fiveStarCountEl = document.getElementById('adminReview5StarCount');
+    const fiveStarPctEl = document.getElementById('adminReview5StarPercent');
+    const verifiedCountEl = document.getElementById('adminReviewVerifiedCount');
+
+    const total = allReviews.length;
+    let sumRating = 0;
+    let fiveStarCount = 0;
+    let verifiedCount = 0;
+
+    allReviews.forEach(r => {
+        const rating = parseInt(r.rating, 10) || 5;
+        sumRating += rating;
+        if (rating === 5) fiveStarCount++;
+        if (r.verified) verifiedCount++;
+    });
+
+    const avg = total > 0 ? (sumRating / total).toFixed(1) : '5.0';
+    const fiveStarPct = total > 0 ? Math.round((fiveStarCount / total) * 100) : 100;
+
+    if (totalCountEl) totalCountEl.textContent = total;
+    if (avgRatingEl) avgRatingEl.textContent = `${avg} ★`;
+    if (fiveStarCountEl) fiveStarCountEl.textContent = fiveStarCount;
+    if (fiveStarPctEl) fiveStarPctEl.textContent = `${fiveStarPct}% of all ratings`;
+    if (verifiedCountEl) verifiedCountEl.textContent = verifiedCount;
+
+    // Filters
+    const searchVal = (document.getElementById('adminReviewSearch')?.value || '').toLowerCase().trim();
+    const filterRating = document.getElementById('adminReviewFilterRating')?.value || 'all';
+
+    let filtered = allReviews.filter(r => {
+        // Rating filter
+        if (filterRating !== 'all') {
+            const targetRating = parseInt(filterRating, 10);
+            if (parseInt(r.rating, 10) !== targetRating) return false;
+        }
+        // Search query filter
+        if (searchVal) {
+            const nameMatch = (r.name || '').toLowerCase().includes(searchVal);
+            const phoneMatch = (r.phone || '').includes(searchVal);
+            const commentMatch = (r.comment || '').toLowerCase().includes(searchVal);
+            const itemMatch = (r.favoriteItem || '').toLowerCase().includes(searchVal);
+            if (!nameMatch && !phoneMatch && !commentMatch && !itemMatch) return false;
+        }
+        return true;
+    });
+
+    const tbody = document.getElementById('adminReviewsTableTbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 40px 10px; color: var(--color-text-muted);">
+                    <i data-lucide="message-square-off" data-size="32" style="margin-bottom: 8px; color: var(--color-caramel);"></i>
+                    <div>No customer reviews match your filter criteria.</div>
+                </td>
+            </tr>
+        `;
+        if (window.lucide) window.lucide.createIcons();
+        return;
+    }
+
+    filtered.forEach(r => {
+        const tr = document.createElement('tr');
+        const rating = Math.max(1, Math.min(5, parseInt(r.rating, 10) || 5));
+        
+        let starsHtml = '';
+        for (let s = 1; s <= 5; s++) {
+            if (s <= rating) {
+                starsHtml += `<span style="color: #f39c12; font-size: 1rem;">★</span>`;
+            } else {
+                starsHtml += `<span style="color: #d5dbdb; font-size: 1rem;">☆</span>`;
+            }
+        }
+
+        const safeName = typeof escapeHtml === 'function' ? escapeHtml(r.name) : r.name;
+        const safePhone = r.phone ? (typeof escapeHtml === 'function' ? escapeHtml(r.phone) : r.phone) : '—';
+        const safeComment = typeof escapeHtml === 'function' ? escapeHtml(r.comment) : r.comment;
+        const safeFav = typeof escapeHtml === 'function' ? escapeHtml(r.favoriteItem || 'Classic Cup') : (r.favoriteItem || 'Classic Cup');
+
+        tr.innerHTML = `
+            <td>
+                <div style="font-weight: 700; color: var(--color-espresso); display: flex; align-items: center; gap: 6px;">
+                    <span>${safeName}</span>
+                    ${r.verified ? `<span class="badge badge-success" style="font-size: 0.68rem; padding: 1px 6px;"><i data-lucide="check" data-size="10"></i> Verified</span>` : ''}
+                </div>
+                <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-top: 2px;">
+                    <i data-lucide="phone" data-size="11"></i> ${safePhone}
+                </div>
+            </td>
+            <td>
+                <div style="display: flex; align-items: center; gap: 2px;">
+                    ${starsHtml}
+                </div>
+                <span style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 600;">${rating}.0 / 5.0</span>
+            </td>
+            <td>
+                <span class="counter-tag" style="background: var(--color-caramel-subtle); color: var(--color-caramel); font-size: 0.78rem;">
+                    ${safeFav}
+                </span>
+            </td>
+            <td>
+                <div style="max-width: 380px; font-size: 0.88rem; color: var(--color-text-main); line-height: 1.45; word-break: break-word;">
+                    “${safeComment}”
+                </div>
+            </td>
+            <td style="font-size: 0.82rem; color: var(--color-text-muted); white-space: nowrap;">
+                ${r.date || '—'}
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+                <button type="button" class="btn btn-outline btn-sm" style="color: #c0392b; border-color: #f5b7b1; padding: 4px 10px;" onclick="deleteCustomerReview('${r.id}')" title="Delete Review">
+                    <i data-lucide="trash-2" data-size="14"></i>
+                    <span>Delete</span>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    if (window.lucide) window.lucide.createIcons();
+};
+
+window.deleteCustomerReview = async function(reviewId) {
+    if (!reviewId) return;
+
+    const confirmed = window.TiraAlert ? await window.TiraAlert.confirm({
+        title: 'Delete Customer Review?',
+        message: 'Are you sure you want to delete this customer review? It will be permanently removed and disappear from the website homepage carousel immediately.',
+        type: 'danger',
+        confirmText: 'Yes, Delete Review',
+        cancelText: 'Keep Review',
+        icon: 'trash-2'
+    }) : window.confirm('Are you sure you want to delete this customer review?');
+
+    if (confirmed) {
+        const res = window.TiraDB.deleteReview(reviewId);
+        if (res && res.success) {
+            showToast('Customer review deleted successfully.', 'success');
+            renderAdminReviews();
+        } else {
+            showToast(res.message || 'Error deleting review', 'error');
+        }
+    }
+};
+
+window.addEventListener('tira-reviews-changed', () => {
+    if (activeSection === 'reviews') {
+        renderAdminReviews();
+    }
+});
 
 // ----------------- STARTUP -----------------
 document.addEventListener('DOMContentLoaded', () => {

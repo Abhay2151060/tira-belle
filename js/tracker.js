@@ -251,6 +251,11 @@ function renderLoyaltyResult(loyalty) {
         window.lucide.createIcons();
     }
 
+    // Auto-populate review form with customer info if found
+    if (loyalty.customer) {
+        autoFillReviewFromCustomer(loyalty.customer.name, loyalty.customer.phone);
+    }
+
     // Show Result Panel smoothly
     resultPanel.classList.add('active');
     resultPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -269,3 +274,185 @@ window.clearLoyaltyTracker = function() {
     if (input) input.focus();
     showToast('Loyalty tracker cleared.', 'info');
 };
+
+// ==========================================================================
+// Customer Review Submission Logic
+// ==========================================================================
+const RATING_LABELS = {
+    1: '1 Star • Needs Improvement',
+    2: '2 Stars • Fair',
+    3: '3 Stars • Good & Enjoyable',
+    4: '4 Stars • Very Good!',
+    5: '5 Stars • Exceptional!'
+};
+
+function initReviewForm() {
+    const starRow = document.getElementById('starRatingRow');
+    const ratingInput = document.getElementById('reviewRatingVal');
+    const ratingText = document.getElementById('starRatingText');
+    const commentEl = document.getElementById('reviewComment');
+    const charCountEl = document.getElementById('reviewCharCount');
+
+    if (starRow && ratingInput) {
+        const starBtns = starRow.querySelectorAll('.star-pick-btn');
+        starBtns.forEach(btn => {
+            const val = parseInt(btn.getAttribute('data-val'), 10);
+
+            btn.addEventListener('click', () => {
+                ratingInput.value = val;
+                updateStarDisplay(val);
+                if (ratingText) ratingText.textContent = RATING_LABELS[val] || `${val} Stars`;
+            });
+
+            btn.addEventListener('mouseenter', () => {
+                highlightStarsUpTo(val);
+            });
+        });
+
+        starRow.addEventListener('mouseleave', () => {
+            const currentVal = parseInt(ratingInput.value, 10) || 5;
+            updateStarDisplay(currentVal);
+        });
+    }
+
+    if (commentEl && charCountEl) {
+        commentEl.addEventListener('input', () => {
+            charCountEl.textContent = `${commentEl.value.length} / 500`;
+        });
+    }
+
+    const form = document.getElementById('customerReviewForm');
+    if (form) {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            window.submitCustomerReview();
+        });
+    }
+}
+
+function updateStarDisplay(rating) {
+    const starRow = document.getElementById('starRatingRow');
+    if (!starRow) return;
+    const starBtns = starRow.querySelectorAll('.star-pick-btn');
+    starBtns.forEach(btn => {
+        const val = parseInt(btn.getAttribute('data-val'), 10);
+        if (val <= rating) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
+
+function highlightStarsUpTo(rating) {
+    const starRow = document.getElementById('starRatingRow');
+    if (!starRow) return;
+    const starBtns = starRow.querySelectorAll('.star-pick-btn');
+    starBtns.forEach(btn => {
+        const val = parseInt(btn.getAttribute('data-val'), 10);
+        if (val <= rating) {
+            btn.classList.add('hover-active');
+        } else {
+            btn.classList.remove('hover-active');
+        }
+    });
+}
+
+// Auto-fill review name & phone from loyalty tracker results
+function autoFillReviewFromCustomer(name, phone) {
+    const nameInput = document.getElementById('reviewName');
+    const phoneInput = document.getElementById('reviewPhone');
+    if (nameInput && name && !nameInput.value) {
+        nameInput.value = name;
+    }
+    if (phoneInput && phone && !phoneInput.value) {
+        phoneInput.value = phone;
+    }
+}
+
+window.submitCustomerReview = function() {
+    const nameInput = document.getElementById('reviewName');
+    const phoneInput = document.getElementById('reviewPhone');
+    const ratingInput = document.getElementById('reviewRatingVal');
+    const commentInput = document.getElementById('reviewComment');
+    const favRadio = document.querySelector('input[name="reviewFavorite"]:checked');
+    const submitBtn = document.getElementById('btnSubmitReview');
+
+    const name = nameInput ? nameInput.value.trim() : '';
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+    const rating = ratingInput ? parseInt(ratingInput.value, 10) || 5 : 5;
+    const comment = commentInput ? commentInput.value.trim() : '';
+    const favoriteItem = favRadio ? favRadio.value : 'Tiramisu – 150 g';
+
+    if (!name) {
+        showToast('Please enter your name.', 'warning');
+        if (nameInput) nameInput.focus();
+        return;
+    }
+
+    if (!comment) {
+        showToast('Please write a short review about your experience.', 'warning');
+        if (commentInput) commentInput.focus();
+        return;
+    }
+
+    if (!window.TiraDB) {
+        showToast('Database is not initialized. Please refresh the page.', 'error');
+        return;
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>Submitting...</span>`;
+    }
+
+    try {
+        const res = window.TiraDB.addReview({
+            name: name,
+            phone: phone,
+            rating: rating,
+            favoriteItem: favoriteItem,
+            comment: comment
+        });
+
+        if (res && res.success) {
+            if (window.TiraAlert && typeof window.TiraAlert.alert === 'function') {
+                window.TiraAlert.alert({
+                    title: 'Review Published with Love! ❤️',
+                    message: `Thank you, <strong>${window.escapeHtml(name)}</strong>! Your review has been added and will appear on our homepage carousel immediately.`,
+                    type: 'success',
+                    buttonText: 'Awesome!'
+                });
+            } else {
+                showToast('Thank you! Your review has been published to our homepage.', 'success', 'Review Submitted');
+            }
+
+            // Reset comment and form state
+            if (commentInput) commentInput.value = '';
+            const charCountEl = document.getElementById('reviewCharCount');
+            if (charCountEl) charCountEl.textContent = '0 / 500';
+
+            // Scroll gently to confirmation
+            const reviewCard = document.getElementById('reviewSection');
+            if (reviewCard) {
+                reviewCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        } else {
+            showToast(res.message || 'Error submitting review.', 'error');
+        }
+    } catch (e) {
+        console.error('Error submitting review:', e);
+        showToast('An unexpected error occurred while saving your review.', 'error');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i data-lucide="send" data-size="16"></i> <span>Submit Review</span>`;
+            if (window.lucide) window.lucide.createIcons();
+        }
+    }
+};
+
+// Initialize review form when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+    initReviewForm();
+});

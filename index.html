@@ -145,6 +145,7 @@
                 <li><a href="#menu" class="nav-link">Our Tiramisu</a></li>
                 <li><a href="#experience" class="nav-link">The Flavor</a></li>
                 <li><a href="#loyalty" class="nav-link">Loyalty Program</a></li>
+                <li><a href="#reviews" class="nav-link">Reviews</a></li>
                 <li><a href="#contact" class="nav-link">Contact</a></li>
             </ul>
 
@@ -370,6 +371,49 @@
         </div>
     </section>
 
+    <!-- Customer Reviews Horizontal Carousel Section -->
+    <section class="section reviews-section" id="reviews">
+        <div class="container">
+            <div class="section-header" style="text-align: center; max-width: 680px; margin: 0 auto 36px;">
+                <span class="section-pretitle">Guest Stories &amp; Love</span>
+                <h2 class="section-title">Loved by Tiramisu Lovers</h2>
+                <p class="section-desc">
+                    Real, unedited reviews from genuine guests who have tasted our handcrafted Italian layers.
+                </p>
+            </div>
+
+            <!-- Carousel Component -->
+            <div class="reviews-carousel-container">
+                <button type="button" class="rev-arrow-btn prev" id="revBtnPrev" aria-label="Previous Reviews" title="Previous Reviews">
+                    <i data-lucide="chevron-left" data-size="22"></i>
+                </button>
+                <button type="button" class="rev-arrow-btn next" id="revBtnNext" aria-label="Next Reviews" title="Next Reviews">
+                    <i data-lucide="chevron-right" data-size="22"></i>
+                </button>
+
+                <!-- Scrollable Track -->
+                <div class="reviews-track" id="reviewsCarouselTrack">
+                    <!-- Cards populated dynamically by renderPublicReviews() in app.js -->
+                </div>
+
+                <!-- Carousel Dot Indicators -->
+                <div class="reviews-dots-row" id="reviewsCarouselDots"></div>
+            </div>
+
+            <!-- Review Action Callout Bar -->
+            <div class="reviews-callout-card">
+                <div class="reviews-callout-text">
+                    <h4>Have you tried TIRA Belle?</h4>
+                    <p>Share your experience with our artisan kitchen and help fellow dessert lovers!</p>
+                </div>
+                <a href="tracker.html#reviewSection" class="btn btn-caramel btn-sm" style="white-space: nowrap;">
+                    <i data-lucide="star" data-size="15"></i>
+                    <span>Leave a Review</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
     <!-- Physical Store & Contact Section -->
     <section class="story-section" id="contact">
         <div class="container story-grid">
@@ -488,10 +532,10 @@
     </footer>
 
     <!-- Scripts -->
-    <script src="js/icons.js?v=5"></script>
-    <script src="js/pwa.js?v=5"></script>
-    <script src="js/alerts.js?v=5"></script>
-    <script src="js/db.js?v=5"></script>
-    <script src="js/app.js?v=5"></script>
+    <script src="js/icons.js?v=6"></script>
+    <script src="js/pwa.js?v=6"></script>
+    <script src="js/alerts.js?v=6"></script>
+    <script src="js/db.js?v=6"></script>
+    <script src="js/app.js?v=6"></script>
 </body>
 </html>

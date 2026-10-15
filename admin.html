@@ -141,6 +141,10 @@
                     <i data-lucide="qr-code" class="nav-icon"></i>
                     <span>Counter Standee</span>
                 </button>
+                <button class="admin-nav-item" onclick="switchAdminSection('reviews')" title="Customer Reviews" data-title="Customer Reviews">
+                    <i data-lucide="star" class="nav-icon"></i>
+                    <span>Customer Reviews</span>
+                </button>
                 <button class="admin-nav-item" onclick="switchAdminSection('settings')" title="Settings" data-title="Settings">
                     <i data-lucide="settings" class="nav-icon"></i>
                     <span>Settings</span>
@@ -848,6 +852,87 @@
                 </div>
             </section>
 
+            <!-- SECTION 8: CUSTOMER REVIEWS MANAGEMENT -->
+            <section id="sec-reviews" class="admin-section">
+                <div class="admin-topbar">
+                    <div>
+                        <h1 class="admin-page-title">Customer Reviews &amp; Testimonials</h1>
+                        <p class="admin-page-subtitle">Moderate and manage reviews displayed on the public storefront homepage</p>
+                    </div>
+                    <div class="admin-top-actions">
+                        <input type="text" id="adminReviewSearch" class="form-input" placeholder="Search reviews by name or text..." style="width: 260px;" oninput="renderAdminReviews()">
+                        <select id="adminReviewFilterRating" class="form-select" style="width: 150px;" onchange="renderAdminReviews()">
+                            <option value="all">All Ratings</option>
+                            <option value="5">5 Stars Only</option>
+                            <option value="4">4 Stars Only</option>
+                            <option value="3">3 Stars Only</option>
+                            <option value="2">2 Stars Only</option>
+                            <option value="1">1 Star Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Review Metric Summary Cards -->
+                <div class="metrics-grid" style="margin-bottom: 24px;">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Total Reviews</span>
+                            <span class="metric-icon"><i data-lucide="message-square" data-size="20"></i></span>
+                        </div>
+                        <div class="metric-value" id="adminReviewTotalCount">0</div>
+                        <div class="metric-sub">Published customer stories</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Average Rating</span>
+                            <span class="metric-icon"><i data-lucide="star" data-size="20" style="color: #f39c12;"></i></span>
+                        </div>
+                        <div class="metric-value" id="adminReviewAvgRating">5.0 ★</div>
+                        <div class="metric-sub">Out of 5.0 maximum</div>
+                    </div>
+
+                    <div class="metric-card rewards">
+                        <div class="metric-header">
+                            <span class="metric-title">5-Star Feedback</span>
+                            <span class="metric-icon"><i data-lucide="award" data-size="20"></i></span>
+                        </div>
+                        <div class="metric-value" id="adminReview5StarCount">0</div>
+                        <div class="metric-sub" id="adminReview5StarPercent">100% of all ratings</div>
+                    </div>
+
+                    <div class="metric-card online">
+                        <div class="metric-header">
+                            <span class="metric-title">Verified Guests</span>
+                            <span class="metric-icon"><i data-lucide="badge-check" data-size="20"></i></span>
+                        </div>
+                        <div class="metric-value" id="adminReviewVerifiedCount">0</div>
+                        <div class="metric-sub">Matched to purchase history</div>
+                    </div>
+                </div>
+
+                <!-- Reviews Table Card -->
+                <div class="card">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="min-width: 170px;">Customer</th>
+                                    <th style="min-width: 120px;">Rating</th>
+                                    <th style="min-width: 140px;">Favorite Item</th>
+                                    <th style="min-width: 280px;">Review Message</th>
+                                    <th style="min-width: 110px;">Date</th>
+                                    <th style="text-align: right; min-width: 110px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminReviewsTableTbody">
+                                <!-- Populated dynamically by renderAdminReviews() -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
         </main>
     </div>
 
@@ -1013,11 +1098,11 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/icons.js?v=5"></script>
-    <script src="js/qrcode.min.js?v=5"></script>
-    <script src="js/pwa.js?v=5"></script>
-    <script src="js/alerts.js?v=5"></script>
-    <script src="js/db.js?v=5"></script>
-    <script src="js/admin.js?v=5"></script>
+    <script src="js/icons.js?v=6"></script>
+    <script src="js/qrcode.min.js?v=6"></script>
+    <script src="js/pwa.js?v=6"></script>
+    <script src="js/alerts.js?v=6"></script>
+    <script src="js/db.js?v=6"></script>
+    <script src="js/admin.js?v=6"></script>
 </body>
 </html>

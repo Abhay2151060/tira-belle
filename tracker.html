@@ -196,6 +196,96 @@
 
         </div>
 
+        <!-- Customer Experience Review Card -->
+        <div class="tracker-card review-submit-card" id="reviewSection" style="margin-top: 32px;">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: var(--color-caramel-subtle); border-radius: 50%; color: var(--color-caramel); margin-bottom: 12px; box-shadow: 0 4px 12px rgba(183, 121, 61, 0.15);">
+                    <i data-lucide="star" data-size="24"></i>
+                </div>
+                <h2 style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--color-espresso); margin-bottom: 6px;">
+                    Loved the Layers? Share Your Review!
+                </h2>
+                <p style="color: var(--color-text-muted); font-size: 0.92rem; max-width: 480px; margin: 0 auto;">
+                    Your feedback means the world to our kitchen and helps fellow dessert lovers discover authentic Italian tiramisu.
+                </p>
+            </div>
+
+            <form id="customerReviewForm" onsubmit="event.preventDefault(); window.submitCustomerReview();">
+                <div class="review-form-grid">
+                    <div class="form-group">
+                        <label for="reviewName" class="form-label">Your Name <span style="color: #e74c3c;">*</span></label>
+                        <input type="text" id="reviewName" class="form-input" placeholder="e.g. Ananya Deshmukh" required autocomplete="name">
+                    </div>
+                    <div class="form-group">
+                        <label for="reviewPhone" class="form-label">Phone Number <span style="font-size: 0.78rem; color: var(--color-text-muted); font-weight: normal;">(Optional, verified badge)</span></label>
+                        <input type="tel" id="reviewPhone" class="form-input" placeholder="e.g. 9876543210" autocomplete="tel">
+                    </div>
+                </div>
+
+                <!-- Star Rating Picker -->
+                <div class="form-group" style="margin-top: 16px;">
+                    <label class="form-label">Rate Your Experience <span style="color: #e74c3c;">*</span></label>
+                    <div class="star-rating-box">
+                        <div class="star-rating-stars" id="starRatingRow">
+                            <button type="button" class="star-pick-btn active" data-val="1" aria-label="1 star"><i data-lucide="star" data-size="24"></i></button>
+                            <button type="button" class="star-pick-btn active" data-val="2" aria-label="2 stars"><i data-lucide="star" data-size="24"></i></button>
+                            <button type="button" class="star-pick-btn active" data-val="3" aria-label="3 stars"><i data-lucide="star" data-size="24"></i></button>
+                            <button type="button" class="star-pick-btn active" data-val="4" aria-label="4 stars"><i data-lucide="star" data-size="24"></i></button>
+                            <button type="button" class="star-pick-btn active" data-val="5" aria-label="5 stars"><i data-lucide="star" data-size="24"></i></button>
+                        </div>
+                        <span class="star-rating-text" id="starRatingText">5 Stars • Exceptional!</span>
+                        <input type="hidden" id="reviewRatingVal" value="5">
+                    </div>
+                </div>
+
+                <!-- Favorite Dessert Selector -->
+                <div class="form-group" style="margin-top: 16px;">
+                    <label class="form-label">What Did You Enjoy Most?</label>
+                    <div class="favorite-pills-row">
+                        <label class="favorite-pill-label">
+                            <input type="radio" name="reviewFavorite" value="Tiramisu – 150 g" checked>
+                            <span class="pill-chip">
+                                <i data-lucide="coffee" data-size="14"></i>
+                                <span>150 g Classic Cup</span>
+                            </span>
+                        </label>
+                        <label class="favorite-pill-label">
+                            <input type="radio" name="reviewFavorite" value="Tiramisu – 350 g">
+                            <span class="pill-chip">
+                                <i data-lucide="box" data-size="14"></i>
+                                <span>350 g Sharing Tub</span>
+                            </span>
+                        </label>
+                        <label class="favorite-pill-label">
+                            <input type="radio" name="reviewFavorite" value="Both Sizes">
+                            <span class="pill-chip">
+                                <i data-lucide="heart" data-size="14"></i>
+                                <span>Both Sizes!</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Review Textarea -->
+                <div class="form-group" style="margin-top: 16px;">
+                    <label for="reviewComment" class="form-label">Your Review <span style="color: #e74c3c;">*</span></label>
+                    <textarea id="reviewComment" class="form-input" rows="3" placeholder="Tell us about the flavor, freshness, creamy mascarpone texture, or counter service..." required maxlength="500"></textarea>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--color-text-muted); margin-top: 5px;">
+                        <span>Your review will appear on the homepage carousel</span>
+                        <span id="reviewCharCount">0 / 500</span>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn btn-caramel" id="btnSubmitReview" style="height: 42px; padding: 0 24px; font-weight: 600;">
+                        <i data-lucide="send" data-size="16"></i>
+                        <span>Submit Review</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
     </main>
 
     <!-- Footer -->
@@ -213,11 +303,11 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/icons.js?v=5"></script>
-    <script src="js/pwa.js?v=5"></script>
-    <script src="js/alerts.js?v=5"></script>
-    <script src="js/db.js?v=5"></script>
-    <script src="js/tracker.js?v=5"></script>
+    <script src="js/icons.js?v=6"></script>
+    <script src="js/pwa.js?v=6"></script>
+    <script src="js/alerts.js?v=6"></script>
+    <script src="js/db.js?v=6"></script>
+    <script src="js/tracker.js?v=6"></script>
     <script>
         function fillAndSearch(query) {
             document.getElementById('trackerInput').value = query;

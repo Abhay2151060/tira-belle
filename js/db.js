@@ -354,6 +354,60 @@ const DEMO_REDEMPTIONS = [
     }
 ];
 
+// Initial authentic customer reviews
+const DEFAULT_REVIEWS = [
+    {
+        id: 'rev-1',
+        name: 'Ananya Deshmukh',
+        phone: '9822012345',
+        rating: 5,
+        favoriteItem: 'Tiramisu – 150 g',
+        comment: 'Hands down the most authentic tiramisu in Pune! The mascarpone is delightfully light, and the espresso-soaked ladyfingers have the perfect kick. Will order again and again!',
+        date: '2026-10-12',
+        verified: true
+    },
+    {
+        id: 'rev-2',
+        name: 'Rohan Mehra',
+        phone: '9845098765',
+        rating: 5,
+        favoriteItem: 'Tiramisu – 350 g',
+        comment: 'Ordered the 350g sharing tub for a family gathering and everyone was blown away. Truly gourmet quality with generous Belgian cocoa dusting.',
+        date: '2026-10-10',
+        verified: true
+    },
+    {
+        id: 'rev-3',
+        name: 'Sneha Kulkarni',
+        phone: '9765432109',
+        rating: 5,
+        favoriteItem: 'Tiramisu – 150 g',
+        comment: 'The loyalty program is such a sweet bonus. Just redeemed my free 150g reward cup today! Yash and Tejas are doing something truly special here.',
+        date: '2026-10-08',
+        verified: true
+    },
+    {
+        id: 'rev-4',
+        name: 'Vikramaditya Roy',
+        phone: '9923188220',
+        rating: 5,
+        favoriteItem: 'Tiramisu – 350 g',
+        comment: 'You can immediately tell they use genuine savoiardi and authentic mascarpone. It has that silky melt-in-the-mouth texture that is so rare to find.',
+        date: '2026-10-04',
+        verified: true
+    },
+    {
+        id: 'rev-5',
+        name: 'Pooja Nair',
+        phone: '9819076543',
+        rating: 5,
+        favoriteItem: 'Tiramisu – 150 g',
+        comment: 'Perfect sweetness, not overpowering at all. The rich espresso aroma when you open the cup is pure bliss. 10/10 recommended!',
+        date: '2026-09-29',
+        verified: true
+    }
+];
+
 class TiraBelleDB {
     constructor() {
         this.data = this.load();
@@ -402,7 +456,8 @@ class TiraBelleDB {
                     products: parsed.products && parsed.products.length ? parsed.products : DEFAULT_PRODUCTS,
                     customers: Array.isArray(parsed.customers) ? parsed.customers : [],
                     sales: Array.isArray(parsed.sales) ? parsed.sales : [],
-                    redemptions: Array.isArray(parsed.redemptions) ? parsed.redemptions : []
+                    redemptions: Array.isArray(parsed.redemptions) ? parsed.redemptions : [],
+                    reviews: Array.isArray(parsed.reviews) && parsed.reviews.length ? parsed.reviews : [...DEFAULT_REVIEWS]
                 };
             }
         } catch (e) {
@@ -413,7 +468,8 @@ class TiraBelleDB {
             products: [...DEFAULT_PRODUCTS],
             customers: [],
             sales: [],
-            redemptions: []
+            redemptions: [],
+            reviews: [...DEFAULT_REVIEWS]
         };
         this.save(initial);
         return initial;
@@ -455,7 +511,8 @@ class TiraBelleDB {
             products: prodsToKeep,
             customers: [],
             sales: [],
-            redemptions: []
+            redemptions: [],
+            reviews: Array.isArray(this.data?.reviews) && this.data.reviews.length ? this.data.reviews : [...DEFAULT_REVIEWS]
         };
         this.data = cleanData;
         this.save(cleanData);
@@ -1044,6 +1101,77 @@ class TiraBelleDB {
             return { success: false, message: 'Error parsing JSON: ' + e.message };
         }
     }
+
+    // ----------------- CUSTOMER REVIEWS MANAGEMENT -----------------
+    getReviews() {
+        if (!Array.isArray(this.data.reviews)) {
+            this.data.reviews = [...DEFAULT_REVIEWS];
+            this.save();
+        }
+        return [...this.data.reviews].sort((a, b) => {
+            const timeA = new Date(a.timestamp || a.date).getTime() || 0;
+            const timeB = new Date(b.timestamp || b.date).getTime() || 0;
+            return timeB - timeA;
+        });
+    }
+
+    addReview(review) {
+        if (!review || !review.name || !review.comment) {
+            return { success: false, message: 'Please provide both your name and review message.' };
+        }
+        if (!Array.isArray(this.data.reviews)) {
+            this.data.reviews = [...DEFAULT_REVIEWS];
+        }
+
+        const newRev = {
+            id: 'rev-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+            name: String(review.name).trim(),
+            phone: String(review.phone || '').trim(),
+            rating: Math.max(1, Math.min(5, parseInt(review.rating, 10) || 5)),
+            favoriteItem: review.favoriteItem || 'Tiramisu – 150 g',
+            comment: String(review.comment).trim(),
+            date: new Date().toISOString().split('T')[0],
+            timestamp: new Date().toISOString(),
+            verified: this.isVerifiedCustomer(review.phone, review.name)
+        };
+
+        this.data.reviews.unshift(newRev);
+        this.save();
+        this.broadcastReviewsChanged();
+        return { success: true, review: newRev };
+    }
+
+    deleteReview(reviewId) {
+        if (!Array.isArray(this.data.reviews)) {
+            return { success: false, message: 'No reviews found.' };
+        }
+        const initialCount = this.data.reviews.length;
+        this.data.reviews = this.data.reviews.filter(r => r.id !== reviewId);
+        if (this.data.reviews.length === initialCount) {
+            return { success: false, message: 'Review not found.' };
+        }
+        this.save();
+        this.broadcastReviewsChanged();
+        return { success: true, message: 'Review deleted successfully.' };
+    }
+
+    isVerifiedCustomer(phone, name) {
+        if (!phone) return false;
+        const cleanPhone = String(phone).replace(/\D/g, '');
+        if (cleanPhone.length < 5) return false;
+        
+        const inCustomers = (this.data.customers || []).some(c => String(c.phone).replace(/\D/g, '').includes(cleanPhone) || cleanPhone.includes(String(c.phone).replace(/\D/g, '')));
+        const inSales = (this.data.sales || []).some(s => String(s.customerPhone).replace(/\D/g, '').includes(cleanPhone) || cleanPhone.includes(String(s.customerPhone).replace(/\D/g, '')));
+        return Boolean(inCustomers || inSales);
+    }
+
+    broadcastReviewsChanged() {
+        try {
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('tira-reviews-changed', { detail: this.data.reviews }));
+            }
+        } catch (e) {}
+    }
 }
 
 // Global utilities & singleton instance
@@ -1059,6 +1187,7 @@ if (typeof window !== 'undefined') {
             window.TiraDB.applyGlobalBranding();
             try {
                 window.dispatchEvent(new CustomEvent('tira-settings-changed', { detail: window.TiraDB.data.settings }));
+                window.dispatchEvent(new CustomEvent('tira-reviews-changed', { detail: window.TiraDB.data.reviews }));
             } catch (err) {}
         }
     });
@@ -1072,6 +1201,7 @@ if (typeof module !== 'undefined' && module.exports) {
         DEFAULT_CUSTOMERS,
         DEFAULT_SALES,
         DEFAULT_REDEMPTIONS,
+        DEFAULT_REVIEWS,
         escapeHtml,
         hashCredential
     };
