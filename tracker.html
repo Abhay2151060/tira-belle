@@ -34,26 +34,7 @@
             display: inline-block;
             animation: bounce 1s infinite alternate;
         }
-        .quick-suggestions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 10px;
-            font-size: 0.82rem;
-            color: var(--color-text-muted);
-        }
-        .quick-badge {
-            background: var(--color-bg-alt);
-            border: 1px solid var(--color-border);
-            padding: 3px 10px;
-            border-radius: var(--radius-pill);
-            cursor: pointer;
-            transition: var(--transition-fast);
-        }
-        .quick-badge:hover {
-            border-color: var(--color-caramel);
-            background: var(--color-caramel-subtle);
-        }
+
     </style>
 </head>
 <body class="tracker-page-wrapper">
@@ -93,20 +74,14 @@
                     <label for="trackerInput" class="form-label">Customer Phone Number or Name</label>
                     <div class="tracker-search-box">
                         <input type="text" id="trackerInput" class="tracker-search-input" placeholder="e.g. 9876543210 or Jay" autocomplete="off" required>
-                        <button type="submit" class="btn btn-caramel btn-lg" id="btnTrackOffer">
-                            <i data-lucide="search" data-size="18"></i>
+                        <button type="submit" class="btn btn-caramel" id="btnTrackOffer">
+                            <i data-lucide="search" data-size="15"></i>
                             <span>Track Offer</span>
                         </button>
-                        <button type="button" class="btn btn-outline btn-lg" id="btnTrackerClear" onclick="window.clearLoyaltyTracker()" title="Clear search">
-                            <i data-lucide="rotate-ccw" data-size="18"></i>
+                        <button type="button" class="btn btn-outline" id="btnTrackerClear" onclick="window.clearLoyaltyTracker()" title="Clear search">
+                            <i data-lucide="rotate-ccw" data-size="15"></i>
                             <span>Clear</span>
                         </button>
-                    </div>
-                    <div class="quick-suggestions">
-                        <span>Quick demo lookup:</span>
-                        <span class="quick-badge" onclick="fillAndSearch('9876543210')">Jay (5/5 • Eligible!)</span>
-                        <span class="quick-badge" onclick="fillAndSearch('9822012345')">Priya (3/5)</span>
-                        <span class="quick-badge" onclick="fillAndSearch('9845098765')">Rahul (2/5 • 1 Claimed)</span>
                     </div>
                 </div>
             </form>

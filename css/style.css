@@ -1090,23 +1090,53 @@ a {
 
 .tracker-search-box {
     display: flex;
-    gap: 10px;
-    margin-bottom: 28px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
 }
 
 .tracker-search-input {
     flex-grow: 1;
-    padding: 14px 20px;
+    height: 42px;
+    padding: 0 16px;
     border-radius: var(--radius-pill);
     border: 1.5px solid var(--color-border);
-    font-size: 1.05rem;
+    font-size: 0.92rem;
     outline: none;
     transition: var(--transition-fast);
+    box-sizing: border-box;
 }
 
 .tracker-search-input:focus {
     border-color: var(--color-caramel);
-    box-shadow: 0 0 0 4px rgba(183, 121, 61, 0.15);
+    box-shadow: 0 0 0 3px rgba(183, 121, 61, 0.15);
+}
+
+.tracker-search-box .btn {
+    height: 42px;
+    padding: 0 16px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+@media (max-width: 540px) {
+    .tracker-search-box {
+        flex-wrap: wrap;
+    }
+    .tracker-search-input {
+        width: 100%;
+        flex-grow: unset;
+    }
+    .tracker-search-box .btn {
+        flex: 1;
+    }
 }
 
 /* Tracker Results View */
