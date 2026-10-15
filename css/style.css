@@ -1912,6 +1912,45 @@ a {
     50% { transform: translateY(-4px); }
 }
 
+/* POS Action Buttons */
+.pos-checkout-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.pos-checkout-actions .btn {
+    height: 42px;
+    padding: 0 16px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    box-sizing: border-box;
+}
+
+.pos-btn-clear {
+    flex: 0 0 auto;
+    min-width: 88px;
+}
+
+.pos-btn-save {
+    flex: 1;
+}
+
+@media (max-width: 480px) {
+    .pos-checkout-actions {
+        flex-direction: column;
+    }
+    .pos-checkout-actions .btn {
+        width: 100%;
+    }
+}
+
 /* Tables */
 .table-responsive {
     width: 100%;

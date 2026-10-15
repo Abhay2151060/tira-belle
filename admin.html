@@ -386,13 +386,13 @@
                             <input type="text" id="posSaleNotes" class="form-input" placeholder="e.g. Extra cocoa, birthday gift">
                         </div>
 
-                        <div style="display: flex; gap: 10px; margin-top: 10px;">
-                            <button type="button" class="btn btn-outline" style="flex: 1;" onclick="resetNewSale()" title="Clear cart and customer details">
-                                <i data-lucide="rotate-ccw" data-size="16"></i>
+                        <div class="pos-checkout-actions">
+                            <button type="button" class="btn btn-outline pos-btn-clear" onclick="resetNewSale()" title="Clear cart and customer details">
+                                <i data-lucide="rotate-ccw" data-size="15"></i>
                                 <span>Clear</span>
                             </button>
-                            <button class="btn btn-caramel btn-lg" style="flex: 2.5;" onclick="submitPosSale()" id="btnSaveSale">
-                                <i data-lucide="circle-check" data-size="18"></i>
+                            <button class="btn btn-caramel pos-btn-save" onclick="submitPosSale()" id="btnSaveSale">
+                                <i data-lucide="circle-check" data-size="16"></i>
                                 <span>Save Sale & Generate Receipt</span>
                             </button>
                         </div>
