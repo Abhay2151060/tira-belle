@@ -16,6 +16,8 @@ tira_belle_database_*.json
 customers_export_*.csv
 *.sql
 *.sqlite
+*.db
+data/
 
 # IDE and Editor configs
 .vscode/

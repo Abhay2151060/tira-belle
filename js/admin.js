@@ -11,28 +11,12 @@ let isAuthenticated = false;
 
 // ----------------- TOAST SYSTEM -----------------
 function showToast(message, type = 'info', title = null) {
-    if (window.TiraAlert) {
+    if (window.TiraAlert && typeof window.TiraAlert.toast === 'function') {
         return window.TiraAlert.toast({ message, type, title });
     }
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    let iconName = 'info';
-    if (type === 'success') iconName = 'circle-check';
-    if (type === 'warning') iconName = 'triangle-alert';
-    if (type === 'error') iconName = 'circle-x';
-
-    toast.innerHTML = `<span class="toast-icon" style="display: flex; align-items: center;"><i data-lucide="${iconName}" data-size="18"></i></span> <div>${message}</div>`;
-    container.appendChild(toast);
-    if (window.lucide && typeof window.lucide.createIcons === 'function') {
-        window.lucide.createIcons();
+    if (typeof window.showToast === 'function' && window.showToast !== showToast) {
+        return window.showToast(message, type, title);
     }
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(10px)';
-        setTimeout(() => toast.remove(), 300);
-    }, 3500);
 }
 
 // ----------------- MOBILE SIDEBAR TOGGLE -----------------
@@ -133,6 +117,7 @@ function checkAdminAuth() {
     if (sessionAuth === 'true' && (now - loginTime < SESSION_TIMEOUT_MS)) {
         isAuthenticated = true;
         sessionStorage.setItem('TIRA_ADMIN_AUTH_TIME', now.toString());
+        document.body.classList.add('admin-authenticated');
         document.getElementById('adminLoginModal').style.display = 'none';
         document.getElementById('adminMainLayout').style.display = 'grid';
         resetSessionTimer();
@@ -140,6 +125,7 @@ function checkAdminAuth() {
     } else {
         sessionStorage.removeItem('TIRA_ADMIN_AUTH');
         sessionStorage.removeItem('TIRA_ADMIN_AUTH_TIME');
+        document.body.classList.remove('admin-authenticated');
         document.getElementById('adminLoginModal').style.display = 'flex';
         document.getElementById('adminMainLayout').style.display = 'none';
     }
@@ -169,6 +155,7 @@ window.handleAdminLogin = async function() {
         sessionStorage.setItem('TIRA_ADMIN_AUTH', 'true');
         sessionStorage.setItem('TIRA_ADMIN_AUTH_TIME', Date.now().toString());
         isAuthenticated = true;
+        document.body.classList.add('admin-authenticated');
         document.getElementById('adminLoginModal').style.display = 'none';
         document.getElementById('adminMainLayout').style.display = 'grid';
         showToast('Welcome to TIRA Belle Admin Portal!', 'success');
@@ -193,6 +180,36 @@ window.logoutAdmin = function() {
     window.location.reload();
 };
 
+// ----------------- PASSWORD VISIBILITY TOGGLE -----------------
+window.togglePasswordVisibility = function(inputId, btnEl) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+
+    if (btnEl) {
+        btnEl.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+        btnEl.setAttribute('title', isPassword ? 'Hide password' : 'Show password');
+        btnEl.innerHTML = `<i data-lucide="${isPassword ? 'eye-off' : 'eye'}" data-size="18"></i>`;
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+    }
+};
+
+function resetPasswordField(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = '';
+    el.type = 'password';
+    const btn = el.parentElement ? el.parentElement.querySelector('.password-toggle-btn') : null;
+    if (btn) {
+        btn.setAttribute('aria-label', 'Show password');
+        btn.setAttribute('title', 'Show password');
+        btn.innerHTML = '<i data-lucide="eye" data-size="18"></i>';
+    }
+}
+
 // ----------------- NAVIGATION -----------------
 window.switchAdminSection = function(sectionId) {
     activeSection = sectionId;
@@ -213,6 +230,7 @@ window.switchAdminSection = function(sectionId) {
     // Section specific loaders
     if (sectionId === 'dashboard') loadDashboardMetrics();
     else if (sectionId === 'pos') renderPosCatalog();
+    else if (sectionId === 'categories') renderCategoriesSection();
     else if (sectionId === 'products') renderProductsTable();
     else if (sectionId === 'customers') renderCustomersTable();
     else if (sectionId === 'loyalty') renderAdminLoyaltyAudit();
@@ -227,124 +245,227 @@ function initAdminApp() {
     applySavedSidebarState();
     loadDashboardMetrics();
     renderPosCatalog();
+    renderCategoriesSection();
+    renderProductsTable();
     renderCustomersTable();
     renderCounterQr();
     populateSettingsFields();
+    setupImageDropzones();
     if (window.lucide) window.lucide.createIcons();
 }
 
+window.addEventListener('tira-backend-synced', () => {
+    if (typeof isAuthenticated !== 'undefined' && isAuthenticated) {
+        initAdminApp();
+    }
+});
+
 // ----------------- SECTION 1: DASHBOARD METRICS -----------------
-window.loadDashboardMetrics = function() {
+window.loadDashboardMetrics = async function() {
     const filterSelect = document.getElementById('dashboardDateFilter');
     const filter = filterSelect ? filterSelect.value : 'today';
-    const metrics = window.TiraDB.getDashboardMetrics(filter);
     const settings = window.TiraDB.getSettings();
     const curr = settings.currency || '₹';
 
-    // Update Metric Cards
-    document.getElementById('dashTotalRevenue').textContent = `${curr}${metrics.totalRevenue.toLocaleString('en-IN')}`;
-    document.getElementById('dashTxnCount').textContent = `${metrics.transactionCount} completed sales`;
-    document.getElementById('dashCashCollection').textContent = `${curr}${metrics.cashCollection.toLocaleString('en-IN')}`;
-    document.getElementById('dashOnlineCollection').textContent = `${curr}${metrics.onlineCollection.toLocaleString('en-IN')}`;
-    document.getElementById('dashTotalPaidCups').textContent = metrics.totalPaidQuantity;
-    document.getElementById('dashRewardsClaimed').textContent = metrics.rewardsRedeemedCount;
+    function renderMetrics(metrics) {
+        if (!metrics) return;
 
-    // Product Summary Table
-    const summaryTag = document.getElementById('dashProductSummaryTag');
-    if (summaryTag) {
-        summaryTag.textContent = filter === 'today' ? "Today's Breakdown" : (filter === 'yesterday' ? "Yesterday's Breakdown" : "All Time Breakdown");
-    }
+        const rev = Number(metrics.totalRevenue ?? metrics.total_revenue ?? 0);
+        const txnCount = Number(metrics.transactionCount ?? metrics.transaction_count ?? 0);
+        const cash = Number(metrics.cashCollection ?? metrics.cash_collection ?? 0);
+        const online = Number(metrics.onlineCollection ?? metrics.online_collection ?? 0);
+        const cups = Number(metrics.totalPaidQuantity ?? metrics.total_paid_quantity ?? 0);
+        const rewards = Number(metrics.rewardsRedeemedCount ?? metrics.rewards_redeemed_count ?? 0);
 
-    const summaryTbody = document.getElementById('dashProductSummaryTbody');
-    if (summaryTbody) {
-        summaryTbody.innerHTML = '';
-        if (!metrics.productSummary.length) {
-            summaryTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--color-text-muted);">No sales recorded for this period.</td></tr>`;
-        } else {
-            metrics.productSummary.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${item.name}</strong></td>
-                    <td><span class="badge" style="background: var(--color-bg);">${item.weight || 'Standard'}</span></td>
-                    <td>${curr}${item.price}</td>
-                    <td><strong style="color: var(--color-espresso);">${item.quantity} cups</strong></td>
-                    <td><strong style="color: var(--color-caramel);">${curr}${item.revenue.toLocaleString('en-IN')}</strong></td>
-                `;
-                summaryTbody.appendChild(tr);
-            });
+        // Update Metric Cards
+        const revEl = document.getElementById('dashTotalRevenue');
+        if (revEl) revEl.textContent = `${curr}${rev.toLocaleString('en-IN')}`;
+        const txnEl = document.getElementById('dashTxnCount');
+        if (txnEl) txnEl.textContent = `${txnCount} completed sales`;
+        const cashEl = document.getElementById('dashCashCollection');
+        if (cashEl) cashEl.textContent = `${curr}${cash.toLocaleString('en-IN')}`;
+        const onlineEl = document.getElementById('dashOnlineCollection');
+        if (onlineEl) onlineEl.textContent = `${curr}${online.toLocaleString('en-IN')}`;
+        const cupsEl = document.getElementById('dashTotalPaidCups');
+        if (cupsEl) cupsEl.textContent = cups;
+        const rewEl = document.getElementById('dashRewardsClaimed');
+        if (rewEl) rewEl.textContent = rewards;
+
+        // Product Summary Table
+        const summaryTag = document.getElementById('dashProductSummaryTag');
+        if (summaryTag) {
+            summaryTag.textContent = filter === 'today' ? "Today's Breakdown" : (filter === 'yesterday' ? "Yesterday's Breakdown" : "All Time Breakdown");
         }
-    }
 
-    // Recent Sales Table
-    const recentTbody = document.getElementById('dashRecentSalesTbody');
-    if (recentTbody) {
-        recentTbody.innerHTML = '';
-        if (!metrics.recentSales.length) {
-            recentTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: var(--color-text-muted);">No recent transactions found.</td></tr>`;
-        } else {
-            metrics.recentSales.forEach(sale => {
-                const tr = document.createElement('tr');
-                const itemsStr = sale.items.map(it => `${it.productName} (x${it.quantity})`).join(', ');
-                const timeStr = new Date(sale.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-                const dateStr = new Date(sale.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-                const safeName = typeof escapeHtml === 'function' ? escapeHtml(sale.customerName || 'Guest') : (sale.customerName || 'Guest');
-                const safePhone = typeof escapeHtml === 'function' ? escapeHtml(sale.customerPhone) : sale.customerPhone;
-                const safeItems = typeof escapeHtml === 'function' ? escapeHtml(itemsStr) : itemsStr;
-                const safeId = typeof escapeHtml === 'function' ? escapeHtml(sale.id) : sale.id;
-
-                tr.innerHTML = `
-                    <td><code>${safeId}</code></td>
-                    <td>${dateStr}, ${timeStr}</td>
-                    <td>
-                        <strong>${safeName}</strong>
-                        <div style="font-size: 0.78rem; color: var(--color-text-muted);">${safePhone}</div>
-                    </td>
-                    <td style="max-width: 220px; font-size: 0.85rem;">${safeItems}</td>
-                    <td><strong>${sale.paidCupsCount} cups</strong></td>
-                    <td><strong>${curr}${sale.totalAmount}</strong></td>
-                    <td>
-                        <span class="badge ${sale.paymentMode === 'Cash' ? 'badge-cash' : 'badge-online'}">
-                            ${sale.paymentMode}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-outline btn-sm" onclick="viewReceipt('${safeId}')" style="display: inline-flex; align-items: center; gap: 4px;">
-                            <i data-lucide="file-text" data-size="14"></i>
-                            <span>Receipt</span>
-                        </button>
-                    </td>
-                `;
-                recentTbody.appendChild(tr);
-            });
+        const summaryTbody = document.getElementById('dashProductSummaryTbody');
+        if (summaryTbody) {
+            summaryTbody.innerHTML = '';
+            const prodList = metrics.productSummary || metrics.product_summary || [];
+            if (!prodList.length) {
+                summaryTbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--color-text-muted);">No sales recorded for this period.</td></tr>`;
+            } else {
+                prodList.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const itemRev = Number(item.revenue ?? 0);
+                    const itemQty = Number(item.quantity ?? 0);
+                    tr.innerHTML = `
+                        <td><strong>${item.name}</strong></td>
+                        <td><span class="badge" style="background: var(--color-bg);">${item.weight || 'Standard'}</span></td>
+                        <td>${curr}${item.price}</td>
+                        <td><strong style="color: var(--color-espresso);">${itemQty} cups</strong></td>
+                        <td><strong style="color: var(--color-caramel);">${curr}${itemRev.toLocaleString('en-IN')}</strong></td>
+                    `;
+                    summaryTbody.appendChild(tr);
+                });
+            }
         }
+
+        // Recent Sales Table
+        const recentTbody = document.getElementById('dashRecentSalesTbody');
+        if (recentTbody) {
+            recentTbody.innerHTML = '';
+            const salesList = metrics.recentSales || metrics.recent_sales || [];
+            if (!salesList.length) {
+                recentTbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color: var(--color-text-muted);">No recent transactions found.</td></tr>`;
+            } else {
+                salesList.forEach(sale => {
+                    const tr = document.createElement('tr');
+                    const items = Array.isArray(sale.items) ? sale.items : [];
+                    const itemsStr = items.map(it => `${it.productName || it.product_name} (x${it.quantity})`).join(', ');
+                    const timeStr = new Date(sale.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+                    const dateStr = new Date(sale.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+                    const safeName = typeof escapeHtml === 'function' ? escapeHtml(sale.customerName || sale.customer_name || 'Guest') : (sale.customerName || sale.customer_name || 'Guest');
+                    const safePhone = typeof escapeHtml === 'function' ? escapeHtml(sale.customerPhone || sale.customer_phone || '') : (sale.customerPhone || sale.customer_phone || '');
+                    const safeItems = typeof escapeHtml === 'function' ? escapeHtml(itemsStr) : itemsStr;
+                    const safeId = typeof escapeHtml === 'function' ? escapeHtml(sale.id) : sale.id;
+                    const paidCups = Number(sale.paidCupsCount ?? sale.paid_cups_count ?? 0);
+                    const amount = Number(sale.totalAmount ?? sale.total_amount ?? 0);
+                    const pMode = sale.paymentMode || sale.payment_mode || 'Cash';
+
+                    tr.innerHTML = `
+                        <td><code>${safeId}</code></td>
+                        <td>${dateStr}, ${timeStr}</td>
+                        <td>
+                            <strong>${safeName}</strong>
+                            <div style="font-size: 0.78rem; color: var(--color-text-muted);">${safePhone}</div>
+                        </td>
+                        <td style="max-width: 220px; font-size: 0.85rem;">${safeItems}</td>
+                        <td><strong>${paidCups} cups</strong></td>
+                        <td><strong>${curr}${amount.toLocaleString('en-IN')}</strong></td>
+                        <td>
+                            <span class="badge ${pMode === 'Cash' ? 'badge-cash' : 'badge-online'}">
+                                ${pMode}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-outline btn-sm" onclick="viewReceipt('${safeId}')" style="display: inline-flex; align-items: center; gap: 4px;">
+                                <i data-lucide="file-text" data-size="14"></i>
+                                <span>Receipt</span>
+                            </button>
+                        </td>
+                    `;
+                    recentTbody.appendChild(tr);
+                });
+            }
+        }
+        if (window.lucide) window.lucide.createIcons();
     }
-    if (window.lucide) window.lucide.createIcons();
+
+    // 1. Immediate local render
+    try {
+        const localMetrics = window.TiraDB.getDashboardMetrics(filter);
+        renderMetrics(localMetrics);
+    } catch (e) {
+        console.warn('Local metrics calculation error:', e);
+    }
+
+    // 2. Fetch fresh live metrics directly from backend
+    try {
+        const res = await window.TiraDB.apiRequest('/sales/metrics?filter_date=' + encodeURIComponent(filter));
+        if (res && res.ok && res.data) {
+            renderMetrics(res.data);
+
+            // Keep local DB sales in sync with any returned recent sales
+            if (Array.isArray(res.data.recentSales) && res.data.recentSales.length) {
+                const existingMap = new Map();
+                (window.TiraDB.data.sales || []).forEach(s => existingMap.set(s.id, s));
+                res.data.recentSales.forEach(s => {
+                    if (s.id && !existingMap.has(s.id)) {
+                        existingMap.set(s.id, s);
+                    }
+                });
+                window.TiraDB.data.sales = Array.from(existingMap.values()).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                window.TiraDB.save();
+            }
+        }
+    } catch (err) {
+        console.warn('Live metrics fetch failed, fallback to local DB:', err);
+    }
 };
 
 // ----------------- SECTION 2: POS SALES REGISTER -----------------
+let activePosCategory = 'all';
+
+window.setPosCategoryFilter = function(catId) {
+    activePosCategory = catId;
+    renderPosCatalog();
+};
+
 window.renderPosCatalog = function() {
     const catalog = document.getElementById('posProductCatalog');
     if (!catalog) return;
-    const products = window.TiraDB.getProducts(true); // Active products only
+    
+    // Render Category Filter Pills
+    const filterPillsContainer = document.getElementById('posCategoryFilterPills');
+    if (filterPillsContainer) {
+        const categories = window.TiraDB.getCategories(true);
+        let pillsHtml = `
+            <button type="button" class="pos-cat-pill ${activePosCategory === 'all' ? 'active' : ''}" onclick="setPosCategoryFilter('all')">
+                All Cups
+            </button>
+        `;
+        categories.forEach(c => {
+            pillsHtml += `
+                <button type="button" class="pos-cat-pill ${activePosCategory === c.id ? 'active' : ''}" onclick="setPosCategoryFilter('${c.id}')">
+                    ${c.name}
+                </button>
+            `;
+        });
+        filterPillsContainer.innerHTML = pillsHtml;
+    }
+
+    let products = window.TiraDB.getProducts(true); // Active products only
+    if (activePosCategory !== 'all') {
+        products = products.filter(p => p.categoryId === activePosCategory);
+    }
     const settings = window.TiraDB.getSettings();
     const curr = settings.currency || '₹';
 
     catalog.innerHTML = '';
-    products.forEach(p => {
-        const card = document.createElement('div');
-        card.className = 'pos-item-card';
-        card.innerHTML = `
-            <img src="${p.image || 'assets/tiramisu-150g.jpg'}" alt="${p.name}" class="pos-item-img" onerror="this.src='assets/tira-belle-poster.jpg'">
-            <div class="pos-item-name">${p.name}</div>
-            <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 6px;">Size: ${p.weight}</div>
-            <div class="pos-item-price">${curr}${p.price}</div>
-            <button class="btn btn-caramel btn-sm" onclick="addToCart('${p.id}')" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
-                <i data-lucide="plus" data-size="14"></i>
-                <span>Add to Cart</span>
-            </button>
+    if (!products.length) {
+        catalog.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 40px 10px; color: var(--color-text-muted);">
+                <i data-lucide="package-open" data-size="32" style="margin-bottom: 8px; color: var(--color-caramel);"></i>
+                <div>No active products in this category.</div>
+            </div>
         `;
-        catalog.appendChild(card);
-    });
+    } else {
+        products.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'pos-item-card';
+            card.innerHTML = `
+                <img src="${p.image || 'assets/classic/tiramisu-classic-150 g.png'}" alt="${p.name}" class="pos-item-img" onerror="this.src='assets/poster/tiramisu-classic-poster.png'">
+                <div class="pos-item-name">${p.name}</div>
+                <div style="font-size: 0.8rem; color: var(--color-text-muted); margin-bottom: 6px;">Size: ${p.weight}</div>
+                <div class="pos-item-price">${curr}${p.price}</div>
+                <button class="btn btn-caramel btn-sm" onclick="addToCart('${p.id}')" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                    <i data-lucide="plus" data-size="14"></i>
+                    <span>Add to Cart</span>
+                </button>
+            `;
+            catalog.appendChild(card);
+        });
+    }
     if (window.lucide) window.lucide.createIcons();
 };
 
@@ -587,7 +708,8 @@ window.toggleRewardInOrder = function(checked) {
     updateCartUI();
 };
 
-window.submitPosSale = function() {
+window.submitPosSale = async function() {
+    const saveBtn = document.getElementById('btnSaveSale');
     const phone = document.getElementById('posCustomerPhone').value.trim();
     const name = document.getElementById('posCustomerName').value.trim();
     const notes = document.getElementById('posSaleNotes').value.trim();
@@ -604,28 +726,45 @@ window.submitPosSale = function() {
         return;
     }
 
-    const result = window.TiraDB.createSale({
-        customerPhone: phone,
-        customerName: name,
-        items: currentCart,
-        paymentMode: currentPaymentMode,
-        notes: notes,
-        redeemFreeReward: redeemReward
-    });
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i data-lucide="loader" data-size="16"></i> <span>Saving Sale...</span>';
+    }
 
-    if (result.success) {
-        showToast(`Sale recorded successfully! Total: ₹${result.sale.totalAmount}`, 'success');
-        
-        // Open receipt modal
-        viewReceipt(result.sale.id);
+    try {
+        const result = await window.TiraDB.createSale({
+            customerPhone: phone,
+            customerName: name,
+            items: currentCart,
+            paymentMode: currentPaymentMode,
+            notes: notes,
+            redeemFreeReward: redeemReward
+        });
 
-        // Reset cart and inputs
-        resetNewSale(true);
+        if (result.success) {
+            showToast(`Sale recorded successfully! Total: ₹${result.sale.totalAmount}`, 'success');
+            
+            // Open receipt modal
+            viewReceipt(result.sale.id);
 
-        // Refresh dashboard metrics
-        loadDashboardMetrics();
-    } else {
-        showToast(result.message || 'Error recording sale', 'error');
+            // Reset cart and inputs
+            resetNewSale(true);
+
+            // Refresh dashboard metrics and customer table
+            loadDashboardMetrics();
+            renderCustomersTable();
+        } else {
+            showToast(result.message || 'Error recording sale', 'error');
+        }
+    } catch (err) {
+        console.error('POS Sale submission error:', err);
+        showToast('Error saving sale: ' + (err.message || 'Please try again'), 'error');
+    } finally {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i data-lucide="check-circle" data-size="16"></i> <span>Save & Record Sale</span>';
+            if (window.lucide) window.lucide.createIcons();
+        }
     }
 };
 
@@ -636,26 +775,36 @@ window.viewReceipt = function(saleId) {
 
     const settings = window.TiraDB.getSettings();
     const curr = settings.currency || '₹';
-    const loyalty = window.TiraDB.getCustomerLoyalty(sale.customerPhone);
+    const custPhone = sale.customerPhone || sale.customer_phone || '';
+    const custName = sale.customerName || sale.customer_name || 'Valued Guest';
+    const payMode = sale.paymentMode || sale.payment_mode || 'Cash';
+    const totalAmt = Number(sale.totalAmount ?? sale.total_amount ?? 0);
+    const loyalty = window.TiraDB.getCustomerLoyalty(custPhone);
 
     document.getElementById('recId').textContent = sale.id;
     document.getElementById('recDate').textContent = new Date(sale.timestamp).toLocaleString('en-IN', {
         day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
     });
-    document.getElementById('recCustName').textContent = sale.customerName || 'Valued Guest';
-    document.getElementById('recCustPhone').textContent = sale.customerPhone;
-    document.getElementById('recPayMode').textContent = sale.paymentMode;
-    document.getElementById('recGrandTotal').textContent = `${curr}${sale.totalAmount}`;
+    document.getElementById('recCustName').textContent = custName;
+    document.getElementById('recCustPhone').textContent = custPhone;
+    document.getElementById('recPayMode').textContent = payMode;
+    document.getElementById('recGrandTotal').textContent = `${curr}${totalAmt.toLocaleString('en-IN')}`;
 
     // Items list
     const itemsContainer = document.getElementById('recItemsList');
     itemsContainer.innerHTML = '';
-    sale.items.forEach(it => {
+    const items = Array.isArray(sale.items) ? sale.items : [];
+    items.forEach(it => {
         const row = document.createElement('div');
         row.className = 'receipt-item-row';
+        const pName = it.productName || it.product_name || 'Tiramisu';
+        const isRew = it.isReward ?? it.is_reward ?? false;
+        const itPrice = Number(it.price ?? 0);
+        const itQty = Number(it.quantity ?? 1);
+        const itTotal = Number(it.total ?? (itPrice * itQty));
         row.innerHTML = `
-            <span>${it.productName} x ${it.quantity}</span>
-            <span>${it.isReward ? 'FREE' : `${curr}${it.total || (it.price * it.quantity)}`}</span>
+            <span>${pName} x ${itQty}</span>
+            <span>${isRew ? 'FREE' : `${curr}${itTotal.toLocaleString('en-IN')}`}</span>
         `;
         itemsContainer.appendChild(row);
     });
@@ -703,76 +852,564 @@ window.printReceipt = function() {
     window.print();
 };
 
-// ----------------- SECTION 3: PRODUCT MANAGEMENT -----------------
-window.renderProductsTable = function() {
-    const tbody = document.getElementById('adminProductsTableTbody');
-    if (!tbody) return;
-    const products = window.TiraDB.getProducts(false); // All products
+// ----------------- SECTION: CATEGORY MANAGEMENT -----------------
+window.renderCategoriesSection = function() {
+    const container = document.getElementById('adminCategoriesContainer');
+    if (!container) return;
+
+    const categories = window.TiraDB.getCategories(false);
+    const products = window.TiraDB.getProducts(false);
     const settings = window.TiraDB.getSettings();
     const curr = settings.currency || '₹';
 
-    tbody.innerHTML = '';
-    products.forEach(p => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>
-                <img src="${p.image || 'assets/tiramisu-150g.jpg'}" alt="${p.name}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;" onerror="this.src='assets/tira-belle-poster.jpg'">
-            </td>
-            <td>
-                <strong>${p.name}</strong>
-                <div style="font-size: 0.78rem; color: var(--color-text-muted); max-width: 250px;">${p.description || ''}</div>
-            </td>
-            <td><span class="badge" style="background: var(--color-bg);">${p.weight}</span></td>
-            <td><strong>${curr}${p.price}</strong></td>
-            <td>
-                <span class="badge ${p.countsTowardsLoyalty ? 'badge-success' : 'badge-warning'}">
-                    ${p.countsTowardsLoyalty ? 'Eligible' : 'Excluded'}
-                </span>
-            </td>
-            <td>
-                <span class="badge ${p.isActive ? 'badge-success' : 'badge-warning'}">
-                    ${p.isActive ? 'Active (Live)' : 'Hidden'}
-                </span>
-            </td>
-            <td>
-                <div style="display: flex; gap: 6px;">
-                    <button class="btn btn-outline btn-sm" onclick="editProduct('${p.id}')" title="Edit Product" style="display: inline-flex; align-items: center; gap: 4px;">
+    // Update Overview Metric Counts
+    const totalCountEl = document.getElementById('catTotalCount');
+    const activeCountEl = document.getElementById('catActiveCount');
+    const prodCountEl = document.getElementById('catProductCount');
+
+    if (totalCountEl) totalCountEl.textContent = categories.length;
+    if (activeCountEl) activeCountEl.textContent = categories.filter(c => c.isActive).length;
+    if (prodCountEl) prodCountEl.textContent = products.filter(p => p.categoryId).length;
+
+    container.innerHTML = '';
+
+    if (!categories.length) {
+        container.innerHTML = `
+            <div class="card" style="text-align: center; padding: 48px 20px;">
+                <div class="upload-icon-circle" style="margin: 0 auto 14px auto;">
+                    <i data-lucide="layers" data-size="32"></i>
+                </div>
+                <h3 style="font-family: var(--font-heading); font-size: 1.3rem; color: var(--color-espresso); margin-bottom: 6px;">No Categories Created Yet</h3>
+                <p style="color: var(--color-text-muted); font-size: 0.92rem; margin-bottom: 20px;">Organize your handcrafted desserts into beautiful categories.</p>
+                <button class="btn btn-caramel btn-sm" onclick="openCategoryModal()">
+                    <i data-lucide="plus" data-size="16"></i>
+                    <span>Create First Category</span>
+                </button>
+            </div>
+        `;
+        if (window.lucide) window.lucide.createIcons();
+        return;
+    }
+
+    categories.forEach(cat => {
+        const catCard = document.createElement('div');
+        catCard.className = 'admin-category-card';
+
+        // Filter products associated with this category
+        const catProducts = products.filter(p => p.categoryId === cat.id);
+
+        let galleryHtml = '';
+        if (catProducts.length > 0) {
+            galleryHtml = `
+                <div class="admin-cat-gallery-grid">
+                    ${catProducts.map(p => `
+                        <div class="admin-cat-product-thumb" onclick="editProduct('${p.id}')" title="Click to edit ${escapeHtml(p.name)}">
+                            <div class="admin-cat-product-thumb-media">
+                                <img src="${p.image || 'assets/classic/tiramisu-classic-150 g.png'}" alt="${escapeHtml(p.name)}" onerror="this.src='assets/poster/tiramisu-classic-poster.png'">
+                            </div>
+                            <div class="admin-cat-product-thumb-info">
+                                <div class="admin-cat-product-thumb-name">${escapeHtml(p.name)}</div>
+                                <div class="admin-cat-product-thumb-price">${curr}${p.price} • ${escapeHtml(p.weight || '')}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        } else {
+            galleryHtml = `
+                <div class="admin-cat-gallery-empty">
+                    <i data-lucide="image" data-size="24" style="margin-bottom: 6px; color: var(--color-caramel); display: inline-block;"></i>
+                    <div>No products or images in this category yet.</div>
+                </div>
+            `;
+        }
+
+        catCard.innerHTML = `
+            <div class="admin-cat-header">
+                <div class="admin-cat-identity">
+                    <img src="${cat.image || (catProducts.length && catProducts[0].image ? catProducts[0].image : 'assets/tira-belle-logo.png')}" 
+                         alt="${escapeHtml(cat.name)}" class="admin-cat-cover-img" onerror="this.src='assets/tira-belle-logo.png'">
+                    <div class="admin-cat-title-group">
+                        <h3>${escapeHtml(cat.name)}</h3>
+                        <div class="admin-cat-badges">
+                            <span class="badge ${cat.isActive ? 'badge-success' : 'badge-warning'}">
+                                ${cat.isActive ? 'Active (Live)' : 'Hidden'}
+                            </span>
+                            <span class="badge" style="background: var(--color-bg); border: 1px solid var(--color-border);">
+                                Order: #${cat.displayOrder || 1}
+                            </span>
+                            <span class="badge" style="background: var(--color-caramel-subtle); color: var(--color-caramel);">
+                                ${catProducts.length} Product${catProducts.length === 1 ? '' : 's'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admin-cat-actions">
+                    <button class="btn btn-outline btn-sm" onclick="openProductModal(null, '${cat.id}')" title="Add Product to this Category" style="display: inline-flex; align-items: center; gap: 4px;">
+                        <i data-lucide="plus" data-size="14"></i>
+                        <span>Add Product</span>
+                    </button>
+                    <button class="btn btn-outline btn-sm" onclick="editCategory('${cat.id}')" title="Edit Category" style="display: inline-flex; align-items: center; gap: 4px;">
                         <i data-lucide="pencil" data-size="14"></i>
                         <span>Edit</span>
                     </button>
-                    <button class="btn btn-outline btn-sm" style="color: #c0392b;" onclick="deleteProduct('${p.id}')" title="Delete Product" style="display: inline-flex; align-items: center; gap: 4px;">
+                    <button class="btn btn-outline btn-sm" style="color: #c0392b;" onclick="deleteCategory('${cat.id}')" title="Delete Category" style="display: inline-flex; align-items: center; gap: 4px;">
                         <i data-lucide="trash-2" data-size="14"></i>
                         <span>Delete</span>
                     </button>
                 </div>
-            </td>
+            </div>
+
+            ${cat.description ? `<p class="admin-cat-desc">${escapeHtml(cat.description)}</p>` : ''}
+
+            <!-- Associated Images & Products Strip -->
+            <div class="admin-cat-gallery-box">
+                <div class="admin-cat-gallery-title">
+                    <span>Associated Images &amp; Products (${catProducts.length})</span>
+                    <button type="button" class="btn btn-outline btn-xs" onclick="openProductModal(null, '${cat.id}')">
+                        <i data-lucide="image-plus" data-size="12"></i>
+                        <span>Upload New Product</span>
+                    </button>
+                </div>
+                ${galleryHtml}
+            </div>
         `;
-        tbody.appendChild(tr);
+
+        container.appendChild(catCard);
     });
+
     if (window.lucide) window.lucide.createIcons();
 };
 
-window.openProductModal = function(product = null) {
+window.openCategoryModal = function(category = null) {
+    const modal = document.getElementById('categoryModal');
+    const title = document.getElementById('categoryModalTitle');
+    if (!modal) return;
+
+    if (category) {
+        title.textContent = 'Edit Category';
+        document.getElementById('catEditId').value = category.id;
+        document.getElementById('catName').value = category.name || '';
+        document.getElementById('catDesc').value = category.description || '';
+        document.getElementById('catDisplayOrder').value = category.displayOrder || 1;
+        document.getElementById('catActive').checked = !!category.isActive;
+
+        // Image preview
+        if (category.image) {
+            document.getElementById('catImage').value = category.image;
+            document.getElementById('catImagePreviewImg').src = category.image;
+            document.getElementById('catImageFilename').textContent = category.image.split('/').pop() || 'Cover Image';
+            document.getElementById('catImageFilesize').textContent = 'Saved Image';
+            document.getElementById('catImageDropArea').style.display = 'none';
+            document.getElementById('catImagePreviewArea').style.display = 'flex';
+        } else {
+            removeCatImage();
+        }
+    } else {
+        title.textContent = 'Add New Category';
+        document.getElementById('catEditId').value = '';
+        document.getElementById('categoryForm').reset();
+        document.getElementById('catActive').checked = true;
+        const currentCats = window.TiraDB.getCategories(false);
+        document.getElementById('catDisplayOrder').value = currentCats.length + 1;
+        removeCatImage();
+    }
+
+    modal.classList.add('active');
+    if (window.lucide) window.lucide.createIcons();
+};
+
+window.closeCategoryModal = function() {
+    const modal = document.getElementById('categoryModal');
+    if (modal) modal.classList.remove('active');
+};
+
+window.editCategory = function(catId) {
+    const cat = window.TiraDB.getCategoryById(catId);
+    if (cat) openCategoryModal(cat);
+};
+
+window.deleteCategory = async function(catId) {
+    const cat = window.TiraDB.getCategoryById(catId);
+    const catName = cat ? cat.name : 'this category';
+    const confirmed = window.TiraAlert ? await window.TiraAlert.confirm({
+        title: 'Delete Category?',
+        message: `Are you sure you want to delete the category "${catName}"? Associated products will remain in your catalog but become unlinked.`,
+        type: 'danger',
+        confirmText: 'Delete Category',
+        cancelText: 'Keep Category',
+        icon: 'trash-2'
+    }) : window.confirm(`Are you sure you want to delete category "${catName}"?`);
+
+    if (confirmed) {
+        window.TiraDB.deleteCategory(catId);
+        showToast('Category deleted successfully.', 'info');
+        renderCategoriesSection();
+        renderProductsTable();
+        renderPosCatalog();
+    }
+};
+
+window.saveCategorySubmit = function() {
+    const id = document.getElementById('catEditId').value.trim();
+    const name = document.getElementById('catName').value.trim();
+    const description = document.getElementById('catDesc').value.trim();
+    const displayOrder = parseInt(document.getElementById('catDisplayOrder').value, 10) || 1;
+    const isActive = document.getElementById('catActive').checked;
+    const image = document.getElementById('catImage').value.trim();
+
+    if (!name) {
+        if (window.TiraAlert) window.TiraAlert.warning('Please enter a category name.', 'Validation');
+        return;
+    }
+
+    window.TiraDB.saveCategory({
+        id: id || undefined,
+        name,
+        description,
+        displayOrder,
+        isActive,
+        image
+    });
+
+    closeCategoryModal();
+    showToast('Category saved successfully!', 'success');
+    renderCategoriesSection();
+    renderProductsTable();
+    renderPosCatalog();
+};
+
+// ----------------- IMAGE UPLOAD CLIENT HELPERS -----------------
+function formatBytes(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+window.handleProductImageFile = async function(file) {
+    if (!file) return;
+
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+        if (window.TiraAlert) {
+            window.TiraAlert.error(`The file ".${ext}" is not supported. Please upload a PNG, JPG, WEBP, or GIF image.`, 'Invalid Image Format');
+        } else {
+            alert('Please upload a valid image file (PNG, JPG, WEBP, GIF).');
+        }
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        if (window.TiraAlert) {
+            window.TiraAlert.warning(`File is ${(file.size / (1024 * 1024)).toFixed(1)} MB. Maximum allowed size is 5 MB.`, 'File Too Large');
+        } else {
+            alert('File size exceeds 5 MB limit.');
+        }
+        return;
+    }
+
+    // Show preview area and progress spinner
+    const dropArea = document.getElementById('prodImageDropArea');
+    const previewArea = document.getElementById('prodImagePreviewArea');
+    const previewImg = document.getElementById('prodImagePreviewImg');
+    const progressOverlay = document.getElementById('prodImageUploadProgress');
+    const filenameEl = document.getElementById('prodImageFilename');
+    const filesizeEl = document.getElementById('prodImageFilesize');
+
+    // Instant local preview
+    previewImg.src = URL.createObjectURL(file);
+    filenameEl.textContent = file.name;
+    filesizeEl.textContent = formatBytes(file.size);
+    dropArea.style.display = 'none';
+    previewArea.style.display = 'flex';
+    if (progressOverlay) progressOverlay.style.display = 'flex';
+
+    try {
+        const uploadRes = await window.TiraDB.uploadImage(file);
+        if (uploadRes && uploadRes.url) {
+            document.getElementById('prodImage').value = uploadRes.url;
+            previewImg.src = uploadRes.url;
+            showToast('Image uploaded successfully!', 'success');
+        }
+    } catch (err) {
+        console.error('Image upload failed:', err);
+        if (window.TiraAlert) {
+            window.TiraAlert.error(err.message || 'Image upload failed. Please try again.', 'Upload Error');
+        } else {
+            alert('Image upload failed: ' + err.message);
+        }
+    } finally {
+        if (progressOverlay) progressOverlay.style.display = 'none';
+        if (window.lucide) window.lucide.createIcons();
+    }
+};
+
+window.removeProductImage = function() {
+    document.getElementById('prodImage').value = '';
+    const fileInput = document.getElementById('prodImageFileInput');
+    if (fileInput) fileInput.value = '';
+    const dropArea = document.getElementById('prodImageDropArea');
+    const previewArea = document.getElementById('prodImagePreviewArea');
+    if (dropArea) dropArea.style.display = 'flex';
+    if (previewArea) previewArea.style.display = 'none';
+    if (window.lucide) window.lucide.createIcons();
+};
+
+window.handleCatImageFile = async function(file) {
+    if (!file) return;
+
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+        if (window.TiraAlert) window.TiraAlert.error('Please upload a valid image file (PNG, JPG, WEBP, GIF).', 'Invalid Image Format');
+        return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+        if (window.TiraAlert) window.TiraAlert.warning('File exceeds 5 MB limit.', 'File Too Large');
+        return;
+    }
+
+    const dropArea = document.getElementById('catImageDropArea');
+    const previewArea = document.getElementById('catImagePreviewArea');
+    const previewImg = document.getElementById('catImagePreviewImg');
+    const progressOverlay = document.getElementById('catImageUploadProgress');
+    const filenameEl = document.getElementById('catImageFilename');
+    const filesizeEl = document.getElementById('catImageFilesize');
+
+    previewImg.src = URL.createObjectURL(file);
+    filenameEl.textContent = file.name;
+    filesizeEl.textContent = formatBytes(file.size);
+    dropArea.style.display = 'none';
+    previewArea.style.display = 'flex';
+    if (progressOverlay) progressOverlay.style.display = 'flex';
+
+    try {
+        const uploadRes = await window.TiraDB.uploadImage(file);
+        if (uploadRes && uploadRes.url) {
+            document.getElementById('catImage').value = uploadRes.url;
+            previewImg.src = uploadRes.url;
+            showToast('Category image uploaded!', 'success');
+        }
+    } catch (err) {
+        console.error('Category image upload failed:', err);
+    } finally {
+        if (progressOverlay) progressOverlay.style.display = 'none';
+        if (window.lucide) window.lucide.createIcons();
+    }
+};
+
+window.removeCatImage = function() {
+    document.getElementById('catImage').value = '';
+    const fileInput = document.getElementById('catImageFileInput');
+    if (fileInput) fileInput.value = '';
+    const dropArea = document.getElementById('catImageDropArea');
+    const previewArea = document.getElementById('catImagePreviewArea');
+    if (dropArea) dropArea.style.display = 'flex';
+    if (previewArea) previewArea.style.display = 'none';
+    if (window.lucide) window.lucide.createIcons();
+};
+
+function setupImageDropzones() {
+    // Setup Drag and Drop for Product Image
+    const prodDrop = document.getElementById('prodImageDropArea');
+    if (prodDrop && !prodDrop._dragConfigured) {
+        prodDrop._dragConfigured = true;
+        ['dragenter', 'dragover'].forEach(name => {
+            prodDrop.addEventListener(name, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                prodDrop.classList.add('dragover');
+            });
+        });
+        ['dragleave', 'drop'].forEach(name => {
+            prodDrop.addEventListener(name, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                prodDrop.classList.remove('dragover');
+            });
+        });
+        prodDrop.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                handleProductImageFile(files[0]);
+            }
+        });
+    }
+
+    // Setup Drag and Drop for Category Image
+    const catDrop = document.getElementById('catImageDropArea');
+    if (catDrop && !catDrop._dragConfigured) {
+        catDrop._dragConfigured = true;
+        ['dragenter', 'dragover'].forEach(name => {
+            catDrop.addEventListener(name, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                catDrop.classList.add('dragover');
+            });
+        });
+        ['dragleave', 'drop'].forEach(name => {
+            catDrop.addEventListener(name, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                catDrop.classList.remove('dragover');
+            });
+        });
+        catDrop.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                handleCatImageFile(files[0]);
+            }
+        });
+    }
+}
+
+// ----------------- SECTION 3: PRODUCT MANAGEMENT -----------------
+window.renderProductsTable = function() {
+    const tbody = document.getElementById('adminProductsTableTbody');
+    if (!tbody) return;
+
+    const categories = window.TiraDB.getCategories(false);
+    const catMap = new Map(categories.map(c => [c.id, c.name]));
+
+    // Populate category filter dropdown if present
+    const filterSelect = document.getElementById('adminProductCategoryFilter');
+    if (filterSelect) {
+        const curVal = filterSelect.value;
+        let optHtml = `<option value="all">All Categories (${window.TiraDB.getProducts(false).length})</option>`;
+        categories.forEach(c => {
+            const count = window.TiraDB.getProducts(false).filter(p => p.categoryId === c.id).length;
+            optHtml += `<option value="${c.id}" ${curVal === c.id ? 'selected' : ''}>${escapeHtml(c.name)} (${count})</option>`;
+        });
+        filterSelect.innerHTML = optHtml;
+    }
+
+    let products = window.TiraDB.getProducts(false); // All products
+    const filterVal = filterSelect ? filterSelect.value : 'all';
+    if (filterVal && filterVal !== 'all') {
+        products = products.filter(p => p.categoryId === filterVal);
+    }
+
+    const settings = window.TiraDB.getSettings();
+    const curr = settings.currency || '₹';
+
+    tbody.innerHTML = '';
+    if (!products.length) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 36px 10px; color: var(--color-text-muted);">
+                    <i data-lucide="package-search" data-size="28" style="margin-bottom: 6px; color: var(--color-caramel);"></i>
+                    <div>No products found matching the selected category.</div>
+                </td>
+            </tr>
+        `;
+    } else {
+        products.forEach(p => {
+            const tr = document.createElement('tr');
+            const categoryName = catMap.get(p.categoryId) || 'Unassigned';
+            tr.innerHTML = `
+                <td>
+                    <img src="${p.image || 'assets/classic/tiramisu-classic-150 g.png'}" alt="${escapeHtml(p.name)}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; border: 1px solid var(--color-border);" onerror="this.src='assets/poster/tiramisu-classic-poster.png'">
+                </td>
+                <td>
+                    <strong>${escapeHtml(p.name)}</strong>
+                    <div style="font-size: 0.78rem; color: var(--color-text-muted); max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.description || '')}</div>
+                </td>
+                <td>
+                    <span class="badge" style="background: var(--color-caramel-subtle); color: var(--color-caramel); font-weight: 600;">
+                        ${escapeHtml(categoryName)}
+                    </span>
+                </td>
+                <td><span class="badge" style="background: var(--color-bg);">${escapeHtml(p.weight || '')}</span></td>
+                <td><strong>${curr}${p.price}</strong></td>
+                <td>
+                    <span class="badge ${p.countsTowardsLoyalty ? 'badge-success' : 'badge-warning'}">
+                        ${p.countsTowardsLoyalty ? 'Eligible' : 'Excluded'}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge ${p.isActive ? 'badge-success' : 'badge-warning'}">
+                        ${p.isActive ? 'Active (Live)' : 'Hidden'}
+                    </span>
+                </td>
+                <td style="text-align: right;">
+                    <div style="display: inline-flex; gap: 6px;">
+                        <button class="btn btn-outline btn-sm" onclick="editProduct('${p.id}')" title="Edit Product" style="display: inline-flex; align-items: center; gap: 4px;">
+                            <i data-lucide="pencil" data-size="14"></i>
+                            <span>Edit</span>
+                        </button>
+                        <button class="btn btn-outline btn-sm" style="color: #c0392b;" onclick="deleteProduct('${p.id}')" title="Delete Product" style="display: inline-flex; align-items: center; gap: 4px;">
+                            <i data-lucide="trash-2" data-size="14"></i>
+                            <span>Delete</span>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+    if (window.lucide) window.lucide.createIcons();
+};
+
+window.openProductModal = function(product = null, defaultCategoryId = null) {
     const modal = document.getElementById('productModal');
     const title = document.getElementById('productModalTitle');
+    const catSelect = document.getElementById('prodCategory');
+
+    // Populate category dropdown
+    const categories = window.TiraDB.getCategories(false);
+    if (catSelect) {
+        catSelect.innerHTML = categories.map(c => `
+            <option value="${c.id}">${escapeHtml(c.name)}</option>
+        `).join('');
+    }
 
     if (product) {
         title.textContent = 'Edit Product';
         document.getElementById('prodEditId').value = product.id;
-        document.getElementById('prodName').value = product.name;
-        document.getElementById('prodWeight').value = product.weight;
-        document.getElementById('prodPrice').value = product.price;
-        document.getElementById('prodImage').value = product.image || '';
+        document.getElementById('prodName').value = product.name || '';
+        document.getElementById('prodWeight').value = product.weight || '';
+        document.getElementById('prodPrice').value = product.price || 0;
         document.getElementById('prodDesc').value = product.description || '';
         document.getElementById('prodActive').checked = !!product.isActive;
         document.getElementById('prodCountsLoyalty').checked = !!product.countsTowardsLoyalty;
+
+        if (catSelect && product.categoryId) {
+            catSelect.value = product.categoryId;
+        }
+
+        // Image state
+        if (product.image) {
+            document.getElementById('prodImage').value = product.image;
+            document.getElementById('prodImagePreviewImg').src = product.image;
+            document.getElementById('prodImageFilename').textContent = product.image.split('/').pop() || 'Product Image';
+            document.getElementById('prodImageFilesize').textContent = 'Saved Image';
+            document.getElementById('prodImageDropArea').style.display = 'none';
+            document.getElementById('prodImagePreviewArea').style.display = 'flex';
+        } else {
+            removeProductImage();
+        }
     } else {
         title.textContent = 'Add New Product';
         document.getElementById('prodEditId').value = '';
         document.getElementById('productForm').reset();
         document.getElementById('prodActive').checked = true;
         document.getElementById('prodCountsLoyalty').checked = true;
+        if (catSelect) {
+            if (defaultCategoryId) {
+                catSelect.value = defaultCategoryId;
+            } else if (categories.length > 0) {
+                catSelect.value = categories[0].id;
+            }
+        }
+        removeProductImage();
     }
+
+    setupImageDropzones();
     modal.classList.add('active');
     if (window.lucide) window.lucide.createIcons();
 };
@@ -802,6 +1439,7 @@ window.deleteProduct = async function(productId) {
         window.TiraDB.deleteProduct(productId);
         showToast('Product removed.', 'info');
         renderProductsTable();
+        renderCategoriesSection();
         renderPosCatalog();
     }
 };
@@ -809,15 +1447,22 @@ window.deleteProduct = async function(productId) {
 window.saveProductSubmit = function() {
     const id = document.getElementById('prodEditId').value;
     const name = document.getElementById('prodName').value.trim();
+    const categoryId = document.getElementById('prodCategory') ? document.getElementById('prodCategory').value : null;
     const weight = document.getElementById('prodWeight').value.trim();
     const price = parseFloat(document.getElementById('prodPrice').value) || 0;
-    const image = document.getElementById('prodImage').value.trim() || 'assets/tiramisu-150g.jpg';
+    const image = document.getElementById('prodImage').value.trim() || 'assets/classic/tiramisu-classic-150 g.png';
     const description = document.getElementById('prodDesc').value.trim();
     const isActive = document.getElementById('prodActive').checked;
     const countsTowardsLoyalty = document.getElementById('prodCountsLoyalty').checked;
 
+    if (!name) {
+        if (window.TiraAlert) window.TiraAlert.warning('Please enter a product name.', 'Validation');
+        return;
+    }
+
     window.TiraDB.saveProduct({
         id: id || undefined,
+        categoryId: categoryId || undefined,
         name,
         weight,
         price,
@@ -830,6 +1475,7 @@ window.saveProductSubmit = function() {
     closeProductModal();
     showToast('Product saved successfully!', 'success');
     renderProductsTable();
+    renderCategoriesSection();
     renderPosCatalog();
 };
 
@@ -1161,35 +1807,60 @@ function renderAdminLoyaltyCard(phone) {
         desc.textContent = `Customer has bought ${loyalty.currentCycleProgress} out of ${loyalty.threshold} eligible cups in the current reward cycle (${loyalty.totalCupsPurchased} cups bought total).`;
     }
 
-    // Stamps Visual
+    // Stamps Visual: [threshold] Paid Slots + 1 Separate Reward Slot
     const stampsGrid = document.getElementById('admResStampsGrid');
     stampsGrid.innerHTML = '';
-    const threshold = loyalty.threshold || 5;
-    const current = loyalty.isEligible ? threshold : loyalty.currentCycleProgress;
+    const threshold = Math.max(1, loyalty.threshold || 5);
+    const current = loyalty.currentCycleProgress;
+    const totalSlots = threshold + 1;
+    const gridCols = totalSlots <= 7 ? totalSlots : Math.ceil(totalSlots / 2);
+    stampsGrid.style.setProperty('--stamp-cols', gridCols);
 
+    // Paid Stamp Slots: 1 to threshold
     for (let i = 1; i <= threshold; i++) {
         const isStamped = i <= current;
-        const isFinal = i === threshold;
         const box = document.createElement('div');
-        box.className = `stamp-box-large ${isStamped ? (isFinal && loyalty.isEligible ? 'filled-reward' : 'filled') : ''}`;
+        box.className = `stamp-box-large ${isStamped ? 'filled' : ''}`;
         
-        let stampIconHtml;
-        if (isFinal) {
-            stampIconHtml = (isStamped && loyalty.isEligible)
-                ? '<i data-lucide="gift" data-size="26"></i>'
-                : '<i data-lucide="award" data-size="26"></i>';
-        } else {
-            stampIconHtml = isStamped
-                ? '<i data-lucide="coffee" data-size="26"></i>'
-                : '<span style="display:inline-block; width:14px; height:14px; border-radius:50%; border:2px solid var(--color-border);"></span>';
-        }
-
         box.innerHTML = `
-            <div class="stamp-img">${stampIconHtml}</div>
-            <div class="stamp-num-badge">${isFinal ? 'FREE CUP' : `Cup #${i}`}</div>
+            <div class="loyalty-cup-container">
+                <img src="assets/cup-empty.png" 
+                     alt="Cup #${i} Empty" 
+                     class="cup-img cup-empty" 
+                     width="110" height="110" 
+                     loading="eager" draggable="false">
+                <img src="assets/cup-filled.png" 
+                     alt="Cup #${i} Filled" 
+                     class="cup-img cup-filled" 
+                     width="110" height="110" 
+                     loading="eager" draggable="false">
+            </div>
+            <div class="stamp-num-badge">Cup #${i}</div>
         `;
         stampsGrid.appendChild(box);
     }
+
+    // Separate Reward Slot (distinct reward slot)
+    const isRewardUnlocked = !!loyalty.isEligible;
+    const rewardBox = document.createElement('div');
+    rewardBox.className = `stamp-box-large reward-slot ${isRewardUnlocked ? 'filled-reward' : ''}`;
+    rewardBox.innerHTML = `
+        <div class="loyalty-cup-container">
+            <img src="assets/cup-empty.png" 
+                 alt="Free Reward Cup Empty" 
+                 class="cup-img cup-empty" 
+                 width="110" height="110" 
+                 loading="eager" draggable="false">
+            <img src="assets/cup-filled.png" 
+                 alt="Free Reward Cup Filled" 
+                 class="cup-img cup-filled" 
+                 width="110" height="110" 
+                 loading="eager" draggable="false">
+            <div class="cup-reward-badge" ${isRewardUnlocked ? 'style="background: #27ae60;"' : ''}>${isRewardUnlocked ? 'FREE' : 'GIFT'}</div>
+        </div>
+        <div class="stamp-num-badge" ${isRewardUnlocked ? 'style="color: #27ae60; font-weight: 800;"' : 'style="color: #27ae60; font-weight: 700;"'}>FREE CUP</div>
+    `;
+    stampsGrid.appendChild(rewardBox);
 
     // Stats
     document.getElementById('admResTotalCups').textContent = loyalty.totalCupsPurchased;
@@ -1430,9 +2101,13 @@ function populateSettingsFields() {
     document.getElementById('setLoyaltyThreshold').value = threshold;
     document.getElementById('setRewardItemName').value = rewardItem;
 
-    document.getElementById('setAdminUser').value = s.adminUsername || 'admin';
-    document.getElementById('setAdminPin').value = '';
-    document.getElementById('setAdminPin').placeholder = 'Enter new 4-digit PIN to change';
+    document.getElementById('setAdminUser').value = s.adminUsername || 'tirabelle.desserts@gmail.com';
+    resetPasswordField('setAdminOldPass');
+    resetPasswordField('setAdminNewPass');
+    resetPasswordField('setAdminConfirmPass');
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons();
+    }
 
     updateStandeeAndHelpTexts(threshold, rewardItem);
 }
@@ -1469,8 +2144,17 @@ window.saveBusinessSettings = function() {
 };
 
 window.saveLoyaltySettings = function() {
-    const threshold = parseInt(document.getElementById('setLoyaltyThreshold').value, 10) || 5;
+    const rawThreshold = document.getElementById('setLoyaltyThreshold').value;
+    const threshold = parseInt(rawThreshold, 10);
+    if (isNaN(threshold) || threshold < 1 || threshold > 50) {
+        showToast('Please enter a valid threshold between 1 and 50 cups.', 'warning');
+        return;
+    }
     const rewardItem = document.getElementById('setRewardItemName').value.trim();
+    if (!rewardItem) {
+        showToast('Please enter a free reward item name.', 'warning');
+        return;
+    }
 
     window.TiraDB.updateSettings({
         loyaltyThreshold: threshold,
@@ -1479,90 +2163,87 @@ window.saveLoyaltySettings = function() {
     updateStandeeAndHelpTexts(threshold, rewardItem);
     renderCustomersTable();
     loadDashboardMetrics();
+
+    // Re-render admin loyalty tracker card if currently displayed
+    const currentPhoneEl = document.getElementById('admResCustPhone');
+    if (currentPhoneEl && currentPhoneEl.textContent) {
+        const phone = currentPhoneEl.textContent.replace(/\D/g, '');
+        if (phone) renderAdminLoyaltyCard(phone);
+    }
+
     showToast('Loyalty program rules saved! Updated across system.', 'success');
 };
 
 window.saveCredentialsSettings = async function() {
-    const user = document.getElementById('setAdminUser').value.trim();
-    const pass = document.getElementById('setAdminPass').value.trim();
-    const pin = document.getElementById('setAdminPin').value.trim();
+    const userEl = document.getElementById('setAdminUser');
+    const oldPassEl = document.getElementById('setAdminOldPass');
+    const newPassEl = document.getElementById('setAdminNewPass');
+    const confirmPassEl = document.getElementById('setAdminConfirmPass');
+
+    const user = userEl ? userEl.value.trim() : '';
+    const oldPass = oldPassEl ? oldPassEl.value.trim() : '';
+    const newPass = newPassEl ? newPassEl.value.trim() : '';
+    const confirmPass = confirmPassEl ? confirmPassEl.value.trim() : '';
 
     if (!user) {
         showToast('Admin username cannot be blank.', 'warning');
+        if (userEl) userEl.focus();
+        return;
+    }
+    if (!oldPass) {
+        showToast('Please enter your old password.', 'warning');
+        if (oldPassEl) oldPassEl.focus();
+        return;
+    }
+    if (!newPass) {
+        showToast('Please enter your new password.', 'warning');
+        if (newPassEl) newPassEl.focus();
+        return;
+    }
+    if (!confirmPass) {
+        showToast('Please confirm your new password.', 'warning');
+        if (confirmPassEl) confirmPassEl.focus();
+        return;
+    }
+    if (newPass !== confirmPass) {
+        showToast('New password and Confirm password do not match.', 'error');
+        if (confirmPassEl) confirmPassEl.focus();
         return;
     }
 
-    await window.TiraDB.updateCredentials({
-        username: user,
-        password: pass || undefined,
-        pin: pin || undefined
-    });
-
-    showToast('Admin credentials securely updated with SHA-256 hash!', 'success');
-    document.getElementById('setAdminPass').value = '';
-    document.getElementById('setAdminPin').value = '';
-};
-
-window.downloadBackup = function() {
-    const jsonStr = window.TiraDB.exportDatabaseJSON();
-    const blob = new Blob([jsonStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `tira_belle_database_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('Database exported successfully!', 'success');
-};
-
-window.importBackup = function(fileInput) {
-    const file = fileInput.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const res = window.TiraDB.importDatabaseJSON(e.target.result);
-        if (res.success) {
-            showToast('Database restored! Reloading application...', 'success');
-            setTimeout(() => window.location.reload(), 1500);
-        } else {
-            showToast(res.message, 'error');
-        }
-    };
-    reader.readAsText(file);
-};
-
-window.resetDemoData = async function() {
-    const confirmed = window.TiraAlert ? await window.TiraAlert.confirm({
-        title: 'Load Demo Records?',
-        message: 'All current sales transactions and customer logs will be replaced with fresh sample demo records.',
-        type: 'warning',
-        confirmText: 'Load Demo Data',
-        cancelText: 'Cancel',
-        icon: 'rotate-ccw'
-    }) : window.confirm('Are you sure you want to load sample demo data? All current records will be replaced with initial demo records.');
-
-    if (confirmed) {
-        window.TiraDB.resetToDemoData();
-        showToast('Demo data loaded successfully.', 'info');
-        setTimeout(() => window.location.reload(), 800);
+    const btn = document.getElementById('btnUpdateCredentials');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span>Updating...</span>';
     }
-};
 
-window.clearAllDataExceptProducts = async function() {
-    const confirmed = window.TiraAlert ? await window.TiraAlert.confirm({
-        title: 'Clear Transactional Records?',
-        message: 'Are you sure you want to clear all customer records, sales transactions, and reward redemptions? The two products and business settings will be preserved.',
-        type: 'danger',
-        confirmText: 'Clear Records',
-        cancelText: 'Cancel',
-        icon: 'triangle-alert'
-    }) : window.confirm('Are you sure you want to clear all customer records, sales, and redemptions? The two products and business settings will be preserved.');
+    try {
+        const res = await window.TiraDB.changeAdminCredentials({
+            username: user,
+            oldPassword: oldPass,
+            newPassword: newPass
+        });
 
-    if (confirmed) {
-        window.TiraDB.clearAllExceptProducts();
-        showToast('All transaction and customer data cleared. Preserved 2 products.', 'success');
-        setTimeout(() => window.location.reload(), 800);
+        if (res && res.success) {
+            showToast('Admin credentials updated successfully!', 'success');
+            resetPasswordField('setAdminOldPass');
+            resetPasswordField('setAdminNewPass');
+            resetPasswordField('setAdminConfirmPass');
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        } else {
+            showToast(res.message || 'Failed to update credentials. Please verify your old password.', 'error');
+        }
+    } catch (err) {
+        console.error('Error updating credentials:', err);
+        showToast('An error occurred while updating credentials.', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i data-lucide="shield-check" data-size="16"></i> <span>Update Credentials</span>';
+            if (window.lucide) window.lucide.createIcons();
+        }
     }
 };
 

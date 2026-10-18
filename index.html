@@ -101,32 +101,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TIRA Belle">
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        .quick-tracker-card {
-            background: #fff;
-            border-radius: var(--radius-lg);
-            border: 2px dashed var(--color-caramel-light);
-            padding: 32px;
-            box-shadow: var(--shadow-md);
-            margin-top: 30px;
-        }
-        .story-section {
-            padding: 70px 0;
-            background: #fff;
-        }
-        .story-grid {
-            display: grid;
-            grid-template-columns: 0.9fr 1.1fr;
-            gap: 48px;
-            align-items: center;
-        }
-        @media (max-width: 860px) {
-            .story-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="css/style.css?v=34">
 </head>
 <body>
 
@@ -141,7 +116,7 @@
                 </div>
             </a>
 
-            <ul class="nav-links" id="primaryNavLinks">
+            <ul class="nav-links desktop-nav-links" id="primaryNavLinks">
                 <li><a href="#menu" class="nav-link">Our Tiramisu</a></li>
                 <li><a href="#experience" class="nav-link">The Flavor</a></li>
                 <li><a href="#loyalty" class="nav-link">Loyalty Program</a></li>
@@ -154,7 +129,7 @@
                     <i data-lucide="download" data-size="16"></i>
                     <span>Install App</span>
                 </button>
-                <a href="tracker.html" class="btn btn-outline btn-sm">
+                <a href="tracker.html" class="btn btn-outline btn-sm nav-track-btn" title="Track Rewards">
                     <i data-lucide="award" data-size="16"></i>
                     <span>Track Rewards</span>
                 </a>
@@ -164,6 +139,44 @@
             </div>
         </div>
     </header>
+
+    <!-- Mobile Navigation Backdrop Overlay -->
+    <div class="mobile-nav-backdrop" id="mobileNavBackdrop"></div>
+
+    <!-- Responsive Navigation Drawer (Direct Child of Body for Full Viewport Stacking) -->
+    <nav class="nav-drawer" id="navDrawer" aria-label="Mobile Navigation">
+        <div class="nav-drawer-header">
+            <div class="nav-brand">
+                <img src="assets/tira-belle-logo.png" alt="TIRA Belle" class="nav-logo-img" data-brand="logo-drawer">
+                <div class="nav-brand-text">
+                    <span class="brand-title" data-brand="name">TIRA Belle</span>
+                    <span class="brand-subtitle" data-brand="tagline">Little Layers • Big Love</span>
+                </div>
+            </div>
+            <button type="button" class="nav-drawer-close" id="mobileNavClose" aria-label="Close navigation menu">
+                <i data-lucide="x" data-size="22"></i>
+            </button>
+        </div>
+
+        <ul class="nav-drawer-links" id="mobileDrawerNavLinks">
+            <li><a href="#menu" class="nav-drawer-link"><i data-lucide="coffee" data-size="19"></i><span>Our Tiramisu</span></a></li>
+            <li><a href="#experience" class="nav-drawer-link"><i data-lucide="sparkles" data-size="19"></i><span>The Flavor</span></a></li>
+            <li><a href="#loyalty" class="nav-drawer-link"><i data-lucide="award" data-size="19"></i><span>Loyalty Program</span></a></li>
+            <li><a href="#reviews" class="nav-drawer-link"><i data-lucide="star" data-size="19"></i><span>Reviews</span></a></li>
+            <li><a href="#contact" class="nav-drawer-link"><i data-lucide="map-pin" data-size="19"></i><span>Contact &amp; Studio</span></a></li>
+        </ul>
+
+        <div class="nav-drawer-footer">
+            <a href="tracker.html" class="btn btn-caramel btn-block">
+                <i data-lucide="award" data-size="18"></i>
+                <span>Check Loyalty Rewards</span>
+            </a>
+            <a href="https://wa.me/919373484198?text=Hello%20TIRA%20Belle,%20I%20would%20like%20to%20order%20handcrafted%20tiramisu" target="_blank" class="btn btn-outline btn-block">
+                <i data-lucide="phone" data-size="18"></i>
+                <span>Order on WhatsApp</span>
+            </a>
+        </div>
+    </nav>
 
     <!-- Hero Section -->
     <section class="hero">
@@ -214,7 +227,7 @@
             <!-- Hero Poster Presentation -->
             <div class="hero-visual">
                 <div class="hero-poster-card">
-                    <img src="assets/tira-belle-poster.jpg" alt="TIRA Belle Tiramisu Choco Cake Poster" class="hero-poster-img">
+                    <img src="assets/poster/tiramisu-classic-poster.png" alt="TIRA Belle Tiramisu Choco Cake Poster" class="hero-poster-img">
                     
                     <div class="hero-floating-card">
                         <div class="floating-icon"><i data-lucide="award" data-size="20"></i></div>
@@ -276,9 +289,14 @@
                 </p>
             </div>
 
-            <!-- Dynamic Products Grid -->
-            <div class="products-grid" id="publicProductsGrid">
-                <!-- Injected via app.js from central DB -->
+            <!-- Dynamic Category Navigation Bar -->
+            <nav class="store-category-nav" id="storefrontCategoryNav" aria-label="Dessert Categories">
+                <!-- Dynamically populated via app.js -->
+            </nav>
+
+            <!-- Category-Wise Products Showcase Container -->
+            <div id="publicProductsGrid" class="category-showcase-container">
+                <!-- Category-wise product blocks injected via app.js -->
             </div>
 
             <div style="text-align: center; margin-top: 40px; padding: 18px 24px; background: var(--color-bg); border-radius: var(--radius-md); border: 1px dashed var(--color-border); max-width: 650px; margin-left: auto; margin-right: auto;">
@@ -358,7 +376,7 @@
                             Already a customer? Check your stamps now:
                         </p>
                         <div style="display: flex; gap: 8px;">
-                            <input type="text" id="quickTrackerInput" class="form-input" placeholder="Enter phone or name" style="padding: 8px 12px; font-size: 0.88rem;">
+                            <input type="text" id="quickTrackerInput" class="form-input" placeholder="Search by name or mobile number" style="padding: 8px 12px; font-size: 0.88rem;">
                             <button class="btn btn-caramel btn-sm" onclick="handleQuickTrack()">
                                 <i data-lucide="search" data-size="14"></i>
                                 <span>Track</span>
@@ -384,13 +402,6 @@
 
             <!-- Carousel Component -->
             <div class="reviews-carousel-container">
-                <button type="button" class="rev-arrow-btn prev" id="revBtnPrev" aria-label="Previous Reviews" title="Previous Reviews">
-                    <i data-lucide="chevron-left" data-size="22"></i>
-                </button>
-                <button type="button" class="rev-arrow-btn next" id="revBtnNext" aria-label="Next Reviews" title="Next Reviews">
-                    <i data-lucide="chevron-right" data-size="22"></i>
-                </button>
-
                 <!-- Scrollable Track -->
                 <div class="reviews-track" id="reviewsCarouselTrack">
                     <!-- Cards populated dynamically by renderPublicReviews() in app.js -->
@@ -418,7 +429,7 @@
     <section class="story-section" id="contact">
         <div class="container story-grid">
             <div>
-                <img src="assets/tira-belle-poster.jpg" alt="TIRA Belle Counter" style="border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
+                <img src="assets/poster/tiramisu-classic-poster.png" alt="TIRA Belle Counter" style="border-radius: var(--radius-lg); box-shadow: var(--shadow-md);">
             </div>
             <div>
                 <span class="section-pretitle">Handcrafted Fresh</span>
@@ -456,7 +467,7 @@
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 14px; flex-wrap: wrap;" id="publicStorefrontActionButtons">
+                <div class="studio-action-buttons" id="publicStorefrontActionButtons">
                     <a href="https://wa.me/919373484198?text=Hello%20Yash!%20I%20would%20like%20to%20order%20TIRA%20Belle%20tiramisu" target="_blank" class="btn btn-caramel btn-lg">
                         <i data-lucide="phone" data-size="18"></i>
                         <span>WhatsApp Yash</span>
@@ -531,11 +542,31 @@
         </div>
     </footer>
 
+    <!-- Mobile Quick Floating Bottom Bar (Mobile/Tablet Viewports) -->
+    <aside class="mobile-bottom-bar" id="mobileBottomBar" aria-label="Mobile quick actions">
+        <a href="#menu" class="mobile-bottom-item" id="mbItemMenu">
+            <i data-lucide="coffee" data-size="19"></i>
+            <span>Menu</span>
+        </a>
+        <a href="tracker.html" class="mobile-bottom-item highlight" id="mbItemRewards">
+            <i data-lucide="award" data-size="19"></i>
+            <span>Rewards</span>
+        </a>
+        <a href="https://wa.me/919373484198?text=Hello%20TIRA%20Belle,%20I%20would%20like%20to%20order%20handcrafted%20tiramisu" target="_blank" class="mobile-bottom-item" id="mbItemWhatsapp">
+            <i data-lucide="phone" data-size="19"></i>
+            <span>Order</span>
+        </a>
+        <a href="#contact" class="mobile-bottom-item" id="mbItemContact">
+            <i data-lucide="map-pin" data-size="19"></i>
+            <span>Counter</span>
+        </a>
+    </aside>
+
     <!-- Scripts -->
-    <script src="js/icons.js?v=6"></script>
-    <script src="js/pwa.js?v=6"></script>
-    <script src="js/alerts.js?v=6"></script>
-    <script src="js/db.js?v=6"></script>
-    <script src="js/app.js?v=6"></script>
+    <script src="js/icons.js?v=34"></script>
+    <script src="js/pwa.js?v=34"></script>
+    <script src="js/alerts.js?v=34"></script>
+    <script src="js/db.js?v=34"></script>
+    <script src="js/app.js?v=34"></script>
 </body>
 </html>

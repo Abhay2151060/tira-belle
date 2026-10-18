@@ -13,7 +13,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TIRA Belle Admin">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=34">
     <style>
         /* Admin specific custom helpers */
         .login-overlay {
@@ -62,15 +62,19 @@
                 Secure sales, products, and loyalty administration
             </p>
 
-            <form id="loginForm" onsubmit="event.preventDefault(); window.handleAdminLogin();">
+            <form id="loginForm" onsubmit="event.preventDefault(); if (typeof window.handleAdminLogin === 'function') { window.handleAdminLogin(); } else if (typeof handleAdminLogin === 'function') { handleAdminLogin(); }">
                 <div class="form-group" style="text-align: left;">
                     <label class="form-label" for="loginUsername">Username</label>
-                    <input type="text" id="loginUsername" class="form-input" value="admin" required autocomplete="username">
+                    <input type="text" id="loginUsername" class="form-input" placeholder="Enter your username or email" required autocomplete="username">
                 </div>
                 <div class="form-group" style="text-align: left;">
-                    <label class="form-label" for="loginPassword">Password or PIN</label>
-                    <input type="password" id="loginPassword" class="form-input" placeholder="Enter password or 4-digit PIN" required autocomplete="current-password">
-                    <div class="form-help">Default password: <code>tirabelle123</code> or PIN: <code>1234</code></div>
+                    <label class="form-label" for="loginPassword">Password</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" id="loginPassword" class="form-input" placeholder="Enter your password" required autocomplete="current-password">
+                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('loginPassword', this)" aria-label="Show password" title="Show password">
+                            <i data-lucide="eye" data-size="18"></i>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-caramel btn-lg" style="width: 100%; margin-top: 10px;">
                     <i data-lucide="log-in" data-size="18"></i>
@@ -87,12 +91,12 @@
     </div>
 
     <!-- Main Admin Layout (Revealed upon authentication) -->
-    <div class="admin-mobile-header" id="adminMobileHeader" style="display: none;">
+    <div class="admin-mobile-header" id="adminMobileHeader">
         <div style="display: flex; align-items: center; gap: 10px;">
             <img src="assets/tira-belle-logo.png" alt="TIRA Belle" style="height: 32px;" data-brand="logo" id="adminMobileLogo">
             <span class="brand-title"><span data-brand="name">TIRA Belle</span> Admin</span>
         </div>
-        <button type="button" class="btn btn-outline btn-sm" id="adminSidebarToggle" onclick="toggleAdminMobileNav()" aria-label="Toggle navigation menu" style="color: #fff; border-color: rgba(255,255,255,0.3);">
+        <button type="button" class="btn btn-outline btn-sm admin-mobile-menu-btn" id="adminSidebarToggle" onclick="toggleAdminMobileNav()" aria-label="Toggle navigation menu" style="color: #fff; border-color: rgba(255,255,255,0.3);">
             <i data-lucide="menu" data-size="18"></i>
             <span>Menu</span>
         </button>
@@ -111,9 +115,14 @@
                         <span>Admin Control</span>
                     </div>
                 </div>
-                <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()" title="Collapse Sidebar" aria-label="Toggle compact sidebar">
-                    <i data-lucide="chevron-left" data-size="16"></i>
-                </button>
+                <div class="admin-sidebar-header-actions">
+                    <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" onclick="toggleSidebarCollapse()" title="Collapse Sidebar" aria-label="Toggle compact sidebar">
+                        <i data-lucide="chevron-left" data-size="16"></i>
+                    </button>
+                    <button type="button" class="sidebar-mobile-close-btn" onclick="closeAdminMobileNav()" title="Close Navigation Drawer" aria-label="Close navigation menu">
+                        <i data-lucide="x" data-size="18"></i>
+                    </button>
+                </div>
             </div>
 
             <nav class="admin-nav">
@@ -128,6 +137,10 @@
                 <button class="admin-nav-item" onclick="switchAdminSection('products')" title="Products" data-title="Products">
                     <i data-lucide="package" class="nav-icon"></i>
                     <span>Products</span>
+                </button>
+                <button class="admin-nav-item" onclick="switchAdminSection('categories')" title="Categories" data-title="Categories">
+                    <i data-lucide="layers" class="nav-icon"></i>
+                    <span>Categories</span>
                 </button>
                 <button class="admin-nav-item" onclick="switchAdminSection('customers')" title="Customer Details" data-title="Customer Details">
                     <i data-lucide="users" class="nav-icon"></i>
@@ -179,7 +192,7 @@
                             <option value="yesterday">Yesterday</option>
                             <option value="all">All Time Sales</option>
                         </select>
-                        <button class="btn btn-caramel btn-sm" onclick="switchAdminSection('pos')">
+                        <button id="btnRecordNewSale" class="btn btn-caramel btn-dashboard-sale" onclick="switchAdminSection('pos')">
                             <i data-lucide="plus" data-size="16"></i>
                             <span>Record New Sale</span>
                         </button>
@@ -301,9 +314,13 @@
                 <div class="pos-grid">
                     <!-- Products Catalog Grid -->
                     <div>
-                        <h3 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--color-espresso); margin-bottom: 14px;">
+                        <h3 style="font-family: var(--font-heading); font-size: 1.25rem; color: var(--color-espresso); margin-bottom: 12px;">
                             Select Tiramisu Cups
                         </h3>
+                        <!-- Category Filter Pills for POS -->
+                        <div class="pos-category-bar" id="posCategoryFilterPills">
+                            <!-- Populated dynamically via renderPosCatalog() -->
+                        </div>
                         <div class="pos-catalog" id="posProductCatalog">
                             <!-- Populated with active products -->
                         </div>
@@ -343,7 +360,7 @@
                         <!-- Customer Details Input -->
                         <div class="form-group customer-suggest-wrapper">
                             <label class="form-label" for="posCustomerPhone">Customer Phone Number <span style="color: #e74c3c;">*</span></label>
-                            <input type="tel" id="posCustomerPhone" class="form-input" placeholder="e.g. 9876543210" oninput="handlePosPhoneInput(this.value)">
+                            <input type="tel" id="posCustomerPhone" class="form-input" placeholder="Enter customer mobile number" oninput="handlePosPhoneInput(this.value)">
                             <div class="form-help">Primary identifier used to track loyalty points automatically</div>
                             
                             <!-- Returning customer quick dropdown -->
@@ -352,7 +369,7 @@
 
                         <div class="form-group">
                             <label class="form-label" for="posCustomerName">Customer Name (Optional)</label>
-                            <input type="text" id="posCustomerName" class="form-input" placeholder="e.g. Jay">
+                            <input type="text" id="posCustomerName" class="form-input" placeholder="Enter customer name">
                         </div>
 
                         <!-- Smart Loyalty Alert Banner -->
@@ -387,7 +404,7 @@
 
                         <div class="form-group">
                             <label class="form-label" for="posSaleNotes">Order Notes (Optional)</label>
-                            <input type="text" id="posSaleNotes" class="form-input" placeholder="e.g. Extra cocoa, birthday gift">
+                            <input type="text" id="posSaleNotes" class="form-input" placeholder="Enter order notes or special requests">
                         </div>
 
                         <div class="pos-checkout-actions">
@@ -404,17 +421,73 @@
                 </div>
             </section>
 
+            <!-- SECTION: CATEGORY MANAGEMENT -->
+            <section id="sec-categories" class="admin-section">
+                <div class="admin-topbar">
+                    <div>
+                        <h1 class="admin-page-title">Category Management</h1>
+                        <p class="admin-page-subtitle">Create, organize, and manage dessert categories, associated images, and product groups</p>
+                    </div>
+                    <div class="admin-top-actions">
+                        <button class="btn btn-caramel btn-sm" onclick="openCategoryModal()">
+                            <i data-lucide="plus" data-size="16"></i>
+                            <span>Add New Category</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Category Overview Metrics -->
+                <div class="metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom: 24px;">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Total Categories</span>
+                            <span class="metric-icon"><i data-lucide="layers" data-size="20"></i></span>
+                        </div>
+                        <div class="metric-value" id="catTotalCount">0</div>
+                        <div class="metric-sub">Organized menu categories</div>
+                    </div>
+
+                    <div class="metric-card online">
+                        <div class="metric-header">
+                            <span class="metric-title">Live on Storefront</span>
+                            <span class="metric-icon"><i data-lucide="check-circle-2" data-size="20"></i></span>
+                        </div>
+                        <div class="metric-value" id="catActiveCount">0</div>
+                        <div class="metric-sub">Active for public display</div>
+                    </div>
+
+                    <div class="metric-card cash">
+                        <div class="metric-header">
+                            <span class="metric-title">Categorized Products</span>
+                            <span class="metric-icon"><i data-lucide="package" data-size="20"></i></span>
+                        </div>
+                        <div class="metric-value" id="catProductCount">0</div>
+                        <div class="metric-sub">Products linked to categories</div>
+                    </div>
+                </div>
+
+                <!-- Category Cards & Associated Images Container -->
+                <div id="adminCategoriesContainer" class="admin-categories-container">
+                    <!-- Populated dynamically via renderCategoriesSection() -->
+                </div>
+            </section>
+
             <!-- SECTION 3: PRODUCT MANAGEMENT -->
             <section id="sec-products" class="admin-section">
                 <div class="admin-topbar">
                     <div>
                         <h1 class="admin-page-title">Product Catalog Management</h1>
-                        <p class="admin-page-subtitle">Add, edit, adjust prices, and toggle products on the public website</p>
+                        <p class="admin-page-subtitle">Add, edit, adjust prices, upload images, and toggle products on the public website</p>
                     </div>
-                    <button class="btn btn-caramel btn-sm" onclick="openProductModal()">
-                        <i data-lucide="plus" data-size="16"></i>
-                        <span>Add New Product</span>
-                    </button>
+                    <div class="admin-top-actions">
+                        <select id="adminProductCategoryFilter" class="form-select" onchange="renderProductsTable()" style="width: auto; min-width: 170px;">
+                            <option value="all">All Categories</option>
+                        </select>
+                        <button class="btn btn-caramel btn-sm" onclick="openProductModal()">
+                            <i data-lucide="plus" data-size="16"></i>
+                            <span>Add New Product</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -424,11 +497,12 @@
                                 <tr>
                                     <th>Image</th>
                                     <th>Product Name</th>
+                                    <th>Category</th>
                                     <th>Weight</th>
                                     <th>Price (₹)</th>
-                                    <th>Counts Towards Loyalty</th>
+                                    <th>Loyalty</th>
                                     <th>Status</th>
-                                    <th>Actions</th>
+                                    <th style="text-align: right;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="adminProductsTableTbody">
@@ -447,7 +521,7 @@
                         <p class="admin-page-subtitle">View all registered customers, lifetime spend, visits, and transaction logs</p>
                     </div>
                     <div class="admin-top-actions">
-                        <input type="text" id="customerSearchInput" class="form-input" placeholder="Search by name or phone..." style="width: 260px;" oninput="renderCustomersTable()">
+                        <input type="text" id="customerSearchInput" class="form-input" placeholder="Search by name or mobile number" style="width: 260px;" oninput="renderCustomersTable()">
                         <button class="btn btn-outline btn-sm" onclick="exportCustomersCSV()">
                             <i data-lucide="download" data-size="16"></i>
                             <span>Export CSV</span>
@@ -477,12 +551,12 @@
                             <span class="chip-badge" id="countFilterOnline">0</span>
                         </button>
                         <button type="button" class="filter-chip" id="chipFilter150g" onclick="setCustomerFilter('150g')">
-                            <i data-lucide="coffee" data-size="14"></i>
+                            <i data-lucide="cake-slice" data-size="14"></i>
                             <span>150 g</span>
                             <span class="chip-badge" id="countFilter150g">0</span>
                         </button>
                         <button type="button" class="filter-chip" id="chipFilter350g" onclick="setCustomerFilter('350g')">
-                            <i data-lucide="layers" data-size="14"></i>
+                            <i data-lucide="cake" data-size="14"></i>
                             <span>350 g</span>
                             <span class="chip-badge" id="countFilter350g">0</span>
                         </button>
@@ -532,8 +606,8 @@
 
                 <div class="card">
                     <h3 style="font-family: var(--font-heading); margin-bottom: 16px;">Search Customer Loyalty</h3>
-                    <div style="display: flex; gap: 12px; max-width: 600px; margin-bottom: 24px;">
-                        <input type="text" id="adminLoyaltySearchInput" class="form-input" placeholder="Enter customer phone or name (e.g. 9876543210 or Jay)" onkeydown="if(event.key==='Enter') adminTrackLoyalty()">
+                    <div class="admin-search-row" style="max-width: 600px; margin-bottom: 24px;">
+                        <input type="text" id="adminLoyaltySearchInput" class="form-input" placeholder="Search by name or mobile number" onkeydown="if(event.key==='Enter') adminTrackLoyalty()">
                         <button class="btn btn-caramel" onclick="adminTrackLoyalty()">
                             <i data-lucide="search" data-size="16"></i>
                             <span>Track</span>
@@ -702,7 +776,7 @@
                                             </button>
                                         </div>
                                         <div class="form-group" style="margin-bottom: 0;">
-                                            <input type="text" id="setLogoUrl" class="form-input" placeholder="Or enter image URL / path (e.g. assets/tira-belle-logo.png)" oninput="handleLogoUrlInput(this.value)" style="font-size: 0.85rem;">
+                                            <input type="text" id="setLogoUrl" class="form-input" placeholder="Enter image URL or asset path" oninput="handleLogoUrlInput(this.value)" style="font-size: 0.85rem;">
                                         </div>
                                         <div style="font-size: 0.78rem; color: var(--color-text-muted);">
                                             Supports PNG, JPG, WebP, SVG. Changes reflect across storefront, admin sidebar, standee, and receipts.
@@ -712,63 +786,63 @@
                             </div>
 
                             <!-- Business Identity Details -->
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                            <div class="form-row-2col">
                                 <div class="form-group">
                                     <label class="form-label">Business Name <span style="color: #e74c3c;">*</span></label>
-                                    <input type="text" id="setBusinessName" class="form-input" required>
+                                    <input type="text" id="setBusinessName" class="form-input" placeholder="Enter business name" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Tagline</label>
-                                    <input type="text" id="setTagline" class="form-input" placeholder="e.g. Little Layers • Big Love">
+                                    <input type="text" id="setTagline" class="form-input" placeholder="Enter business tagline">
                                 </div>
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                            <div class="form-row-2col">
                                 <div class="form-group">
                                     <label class="form-label">Slogan / Flavor Descriptor</label>
-                                    <input type="text" id="setSlogan" class="form-input" placeholder="e.g. Layers of Love in Every Spoon">
+                                    <input type="text" id="setSlogan" class="form-input" placeholder="Enter brand slogan">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Owner / Chef Name(s)</label>
-                                    <input type="text" id="setOwnerName" class="form-input" placeholder="e.g. Yash Chauhan &amp; Tejas Chauhan">
+                                    <input type="text" id="setOwnerName" class="form-input" placeholder="Enter owner or chef name">
                                 </div>
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                            <div class="form-row-2col">
                                 <div class="form-group">
                                     <label class="form-label">Primary WhatsApp / Phone <span style="color: #e74c3c;">*</span></label>
-                                    <input type="text" id="setPhone" class="form-input" required placeholder="e.g. 9373484198">
+                                    <input type="text" id="setPhone" class="form-input" placeholder="Enter mobile number" required>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Secondary Contact Phone</label>
-                                    <input type="text" id="setPhoneSecondary" class="form-input" placeholder="e.g. 8484870543">
+                                    <input type="text" id="setPhoneSecondary" class="form-input" placeholder="Enter secondary mobile number">
                                 </div>
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                            <div class="form-row-2col">
                                 <div class="form-group">
                                     <label class="form-label">Email Address</label>
-                                    <input type="email" id="setEmail" class="form-input" placeholder="e.g. tirabelle.desserts@gmail.com">
+                                    <input type="email" id="setEmail" class="form-input" placeholder="Enter your email address">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Instagram Handle</label>
-                                    <input type="text" id="setInstagram" class="form-input" placeholder="e.g. @tirabelle">
+                                    <input type="text" id="setInstagram" class="form-input" placeholder="Enter Instagram handle">
                                 </div>
                             </div>
 
                             <div class="form-group">
                                 <label class="form-label">Physical Store / Counter Address</label>
-                                <input type="text" id="setAddress" class="form-input" placeholder="e.g. Physical Dessert Studio &amp; Artisan Counter, Pune">
+                                <input type="text" id="setAddress" class="form-input" placeholder="Enter store or counter address">
                             </div>
 
-                            <div style="display: grid; grid-template-columns: 1.4fr 0.6fr; gap: 14px;">
+                            <div class="form-row-2col">
                                 <div class="form-group">
                                     <label class="form-label">UPI ID (for Payments &amp; Receipts)</label>
-                                    <input type="text" id="setUpiId" class="form-input" placeholder="e.g. 9373484198@upi">
+                                    <input type="text" id="setUpiId" class="form-input" placeholder="Enter UPI ID for payments">
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Currency Symbol</label>
-                                    <input type="text" id="setCurrency" class="form-input" placeholder="₹" maxlength="5">
+                                    <input type="text" id="setCurrency" class="form-input" placeholder="Enter currency symbol (e.g. ₹)" maxlength="5">
                                 </div>
                             </div>
 
@@ -786,12 +860,12 @@
                             <form id="settingsLoyaltyForm" onsubmit="event.preventDefault(); saveLoyaltySettings();">
                                 <div class="form-group">
                                     <label class="form-label">Cups Needed for Free Reward (Threshold)</label>
-                                    <input type="number" id="setLoyaltyThreshold" class="form-input" min="1" max="50" required>
+                                    <input type="number" id="setLoyaltyThreshold" class="form-input" placeholder="Enter number of cups required (e.g. 5)" min="1" max="50" required>
                                     <div class="form-help" id="setLoyaltyRuleHelp">Current rule: 5 cups earns 1 free 150g tiramisu</div>
                                 </div>
                                 <div class="form-group">
                                     <label class="form-label">Free Reward Item Name</label>
-                                    <input type="text" id="setRewardItemName" class="form-input" required>
+                                    <input type="text" id="setRewardItemName" class="form-input" placeholder="Enter free reward item name" required>
                                 </div>
                                 <button type="submit" class="btn btn-caramel">
                                     <i data-lucide="save" data-size="16"></i>
@@ -804,50 +878,42 @@
                             <div class="card-title">Admin Credentials</div>
                             <form id="settingsCredentialsForm" onsubmit="event.preventDefault(); saveCredentialsSettings();">
                                 <div class="form-group">
-                                    <label class="form-label">Admin Username</label>
-                                    <input type="text" id="setAdminUser" class="form-input" required>
+                                    <label class="form-label" for="setAdminUser">Admin Username</label>
+                                    <input type="text" id="setAdminUser" class="form-input" placeholder="Enter admin username" required autocomplete="username">
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">New Password</label>
-                                    <input type="password" id="setAdminPass" class="form-input" placeholder="Leave blank to keep unchanged">
+                                    <label class="form-label" for="setAdminOldPass">Old Password</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" id="setAdminOldPass" class="form-input" placeholder="Enter old password" required autocomplete="current-password">
+                                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('setAdminOldPass', this)" aria-label="Show password" title="Show password">
+                                            <i data-lucide="eye" data-size="18"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="form-group">
-                                    <label class="form-label">Quick 4-Digit PIN</label>
-                                    <input type="text" id="setAdminPin" class="form-input" maxlength="6">
+                                    <label class="form-label" for="setAdminNewPass">New Password</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" id="setAdminNewPass" class="form-input" placeholder="Enter new password" required autocomplete="new-password">
+                                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('setAdminNewPass', this)" aria-label="Show password" title="Show password">
+                                            <i data-lucide="eye" data-size="18"></i>
+                                        </button>
+                                    </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary">
+                                <div class="form-group">
+                                    <label class="form-label" for="setAdminConfirmPass">Confirm New Password</label>
+                                    <div class="password-input-wrapper">
+                                        <input type="password" id="setAdminConfirmPass" class="form-input" placeholder="Confirm new password" required autocomplete="new-password">
+                                        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('setAdminConfirmPass', this)" aria-label="Show password" title="Show password">
+                                            <i data-lucide="eye" data-size="18"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" id="btnUpdateCredentials">
                                     <i data-lucide="shield-check" data-size="16"></i>
                                     <span>Update Credentials</span>
                                 </button>
                             </form>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Backup & Reset Section -->
-                <div class="card">
-                    <div class="card-title">Database Backup & Data Management</div>
-                    <p style="color: var(--color-text-muted); font-size: 0.9rem; margin-bottom: 20px;">
-                        All data is securely stored in your local browser storage. You can download complete JSON backups or restore previous data anytime.
-                    </p>
-                    <div style="display: flex; gap: 14px; flex-wrap: wrap;">
-                        <button class="btn btn-outline" onclick="downloadBackup()">
-                            <i data-lucide="download" data-size="16"></i>
-                            <span>Export Database Backup (JSON)</span>
-                        </button>
-                        <label class="btn btn-outline" style="cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
-                            <i data-lucide="upload" data-size="16"></i>
-                            <span>Restore from Backup (JSON)</span>
-                            <input type="file" id="importBackupFile" accept=".json" style="display: none;" onchange="importBackup(this)">
-                        </label>
-                        <button class="btn btn-outline" style="color: #c0392b; border-color: #f5b7b1;" onclick="clearAllDataExceptProducts()">
-                            <i data-lucide="trash-2" data-size="16"></i>
-                            <span>Clear All Data (Keep 2 Products Only)</span>
-                        </button>
-                        <button class="btn btn-outline" onclick="resetDemoData()">
-                            <i data-lucide="refresh-cw" data-size="16"></i>
-                            <span>Load Demo Sample Data</span>
-                        </button>
                     </div>
                 </div>
             </section>
@@ -860,7 +926,7 @@
                         <p class="admin-page-subtitle">Moderate and manage reviews displayed on the public storefront homepage</p>
                     </div>
                     <div class="admin-top-actions">
-                        <input type="text" id="adminReviewSearch" class="form-input" placeholder="Search reviews by name or text..." style="width: 260px;" oninput="renderAdminReviews()">
+                        <input type="text" id="adminReviewSearch" class="form-input" placeholder="Search by customer name or review text" style="width: 260px;" oninput="renderAdminReviews()">
                         <select id="adminReviewFilterRating" class="form-select" style="width: 150px;" onchange="renderAdminReviews()">
                             <option value="all">All Ratings</option>
                             <option value="5">5 Stars Only</option>
@@ -907,7 +973,7 @@
                             <span class="metric-icon"><i data-lucide="badge-check" data-size="20"></i></span>
                         </div>
                         <div class="metric-value" id="adminReviewVerifiedCount">0</div>
-                        <div class="metric-sub">Matched to purchase history</div>
+                        <div class="metric-sub">With verified phone number</div>
                     </div>
                 </div>
 
@@ -950,25 +1016,74 @@
                     <input type="hidden" id="prodEditId">
                     <div class="form-group">
                         <label class="form-label">Product Name <span style="color: #e74c3c;">*</span></label>
-                        <input type="text" id="prodName" class="form-input" placeholder="e.g. Tiramisu – 150 g" required>
+                        <input type="text" id="prodName" class="form-input" placeholder="Enter product name" required>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                    <div class="form-row-2col">
+                        <div class="form-group">
+                            <label class="form-label">Category <span style="color: #e74c3c;">*</span></label>
+                            <select id="prodCategory" class="form-select" required>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
                         <div class="form-group">
                             <label class="form-label">Cup Size / Weight <span style="color: #e74c3c;">*</span></label>
-                            <input type="text" id="prodWeight" class="form-input" placeholder="e.g. 150 g" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Price (₹) <span style="color: #e74c3c;">*</span></label>
-                            <input type="number" id="prodPrice" class="form-input" placeholder="e.g. 150" min="0" required>
+                            <input type="text" id="prodWeight" class="form-input" placeholder="e.g. 150 g or 350 g" required>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Image Path or URL</label>
-                        <input type="text" id="prodImage" class="form-input" placeholder="assets/tiramisu-150g.jpg">
+                        <label class="form-label">Price (₹) <span style="color: #e74c3c;">*</span></label>
+                        <input type="number" id="prodPrice" class="form-input" placeholder="Enter product price" min="0" required>
                     </div>
+
+                    <!-- Direct Image Upload Option -->
+                    <div class="form-group">
+                        <label class="form-label">Product Image <span style="color: #e74c3c;">*</span></label>
+                        <input type="hidden" id="prodImage" value="">
+                        
+                        <div class="image-upload-wrapper">
+                            <input type="file" id="prodImageFileInput" accept="image/png, image/jpeg, image/jpg, image/webp, image/gif" style="display: none;" onchange="handleProductImageFile(this.files[0])">
+                            
+                            <!-- Dropzone Empty State -->
+                            <div class="image-upload-dropzone" id="prodImageDropArea" onclick="document.getElementById('prodImageFileInput').click()">
+                                <div class="upload-icon-circle">
+                                    <i data-lucide="cloud-upload" data-size="26"></i>
+                                </div>
+                                <div class="upload-drop-text">
+                                    <span class="upload-primary-text">Click to upload image</span> or drag and drop
+                                </div>
+                                <div class="upload-hint-text">Supported: PNG, JPG, JPEG, WEBP or GIF (Max 5 MB)</div>
+                            </div>
+
+                            <!-- Upload Preview State -->
+                            <div class="image-upload-preview" id="prodImagePreviewArea" style="display: none;">
+                                <div class="preview-img-box">
+                                    <img id="prodImagePreviewImg" src="" alt="Product Preview" onerror="this.src='assets/poster/tiramisu-classic-poster.png'">
+                                    <div class="upload-progress-overlay" id="prodImageUploadProgress" style="display: none;">
+                                        <div class="spinner-sm"></div>
+                                        <span>Uploading...</span>
+                                    </div>
+                                </div>
+                                <div class="preview-meta">
+                                    <div class="preview-filename" id="prodImageFilename">Image selected</div>
+                                    <div class="preview-filesize" id="prodImageFilesize">Ready for saving</div>
+                                    <div class="preview-actions">
+                                        <button type="button" class="btn btn-outline btn-xs" onclick="document.getElementById('prodImageFileInput').click()">
+                                            <i data-lucide="refresh-cw" data-size="12"></i>
+                                            <span>Change Image</span>
+                                        </button>
+                                        <button type="button" class="btn btn-outline btn-xs btn-danger-subtle" onclick="removeProductImage()">
+                                            <i data-lucide="trash-2" data-size="12"></i>
+                                            <span>Remove</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label class="form-label">Description</label>
-                        <textarea id="prodDesc" class="form-textarea" rows="3" placeholder="Handcrafted with espresso, mascarpone, and Belgian cocoa..."></textarea>
+                        <textarea id="prodDesc" class="form-textarea" rows="2" placeholder="Enter product description and key ingredients"></textarea>
                     </div>
                     <div class="form-group" style="display: flex; gap: 24px;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
@@ -986,6 +1101,97 @@
                     <button type="submit" class="btn btn-caramel">
                         <i data-lucide="save" data-size="16"></i>
                         <span>Save Product</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Category Modal (Add/Edit) -->
+    <div id="categoryModal" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 class="modal-title" id="categoryModalTitle">Add New Category</h3>
+                <button class="modal-close-btn" onclick="closeCategoryModal()" aria-label="Close modal">
+                    <i data-lucide="x" data-size="20"></i>
+                </button>
+            </div>
+            <form id="categoryForm" onsubmit="event.preventDefault(); saveCategorySubmit();">
+                <div class="modal-body">
+                    <input type="hidden" id="catEditId">
+                    <div class="form-group">
+                        <label class="form-label">Category Name <span style="color: #e74c3c;">*</span></label>
+                        <input type="text" id="catName" class="form-input" placeholder="e.g. Classic Tiramisu, Seasonal Specials" required>
+                    </div>
+                    <div class="form-row-2col">
+                        <div class="form-group">
+                            <label class="form-label">Display Order</label>
+                            <input type="number" id="catDisplayOrder" class="form-input" placeholder="1, 2, 3..." min="1" value="1">
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: center; padding-top: 26px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                                <input type="checkbox" id="catActive" checked>
+                                <span>Active (Visible on Website)</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <textarea id="catDesc" class="form-textarea" rows="2" placeholder="Brief description of this dessert category"></textarea>
+                    </div>
+
+                    <!-- Category Cover Image Upload -->
+                    <div class="form-group">
+                        <label class="form-label">Category Cover / Banner Image (Optional)</label>
+                        <input type="hidden" id="catImage" value="">
+                        
+                        <div class="image-upload-wrapper">
+                            <input type="file" id="catImageFileInput" accept="image/png, image/jpeg, image/jpg, image/webp, image/gif" style="display: none;" onchange="handleCatImageFile(this.files[0])">
+                            
+                            <!-- Dropzone Empty State -->
+                            <div class="image-upload-dropzone" id="catImageDropArea" onclick="document.getElementById('catImageFileInput').click()">
+                                <div class="upload-icon-circle">
+                                    <i data-lucide="image-plus" data-size="24"></i>
+                                </div>
+                                <div class="upload-drop-text">
+                                    <span class="upload-primary-text">Upload category banner</span> or drag and drop
+                                </div>
+                                <div class="upload-hint-text">PNG, JPG, WEBP (Max 5 MB)</div>
+                            </div>
+
+                            <!-- Upload Preview State -->
+                            <div class="image-upload-preview" id="catImagePreviewArea" style="display: none;">
+                                <div class="preview-img-box">
+                                    <img id="catImagePreviewImg" src="" alt="Category Preview" onerror="this.src='assets/poster/tiramisu-classic-poster.png'">
+                                    <div class="upload-progress-overlay" id="catImageUploadProgress" style="display: none;">
+                                        <div class="spinner-sm"></div>
+                                        <span>Uploading...</span>
+                                    </div>
+                                </div>
+                                <div class="preview-meta">
+                                    <div class="preview-filename" id="catImageFilename">Category image</div>
+                                    <div class="preview-filesize" id="catImageFilesize">Ready</div>
+                                    <div class="preview-actions">
+                                        <button type="button" class="btn btn-outline btn-xs" onclick="document.getElementById('catImageFileInput').click()">
+                                            <i data-lucide="refresh-cw" data-size="12"></i>
+                                            <span>Change</span>
+                                        </button>
+                                        <button type="button" class="btn btn-outline btn-xs btn-danger-subtle" onclick="removeCatImage()">
+                                            <i data-lucide="trash-2" data-size="12"></i>
+                                            <span>Remove</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeCategoryModal()">Cancel</button>
+                    <button type="submit" class="btn btn-caramel">
+                        <i data-lucide="save" data-size="16"></i>
+                        <span>Save Category</span>
                     </button>
                 </div>
             </form>
@@ -1098,11 +1304,11 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/icons.js?v=6"></script>
-    <script src="js/qrcode.min.js?v=6"></script>
-    <script src="js/pwa.js?v=6"></script>
-    <script src="js/alerts.js?v=6"></script>
-    <script src="js/db.js?v=6"></script>
-    <script src="js/admin.js?v=6"></script>
+    <script src="js/icons.js?v=34"></script>
+    <script src="js/qrcode.min.js?v=34"></script>
+    <script src="js/pwa.js?v=34"></script>
+    <script src="js/alerts.js?v=34"></script>
+    <script src="js/db.js?v=34"></script>
+    <script src="js/admin.js?v=34"></script>
 </body>
 </html>

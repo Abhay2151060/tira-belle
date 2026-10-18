@@ -13,29 +13,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="TIRA Belle">
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        .tracker-page-wrapper {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-        .tracker-brand-header {
-            text-align: center;
-            padding: 30px 20px 10px;
-        }
-        .tracker-brand-logo {
-            height: 70px;
-            margin: 0 auto 12px;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06));
-        }
-        .reward-confetti {
-            display: inline-block;
-            animation: bounce 1s infinite alternate;
-        }
-
-    </style>
+    <link rel="stylesheet" href="css/style.css?v=34">
 </head>
 <body class="tracker-page-wrapper">
 
@@ -50,6 +28,10 @@
                 </div>
             </a>
             <div class="nav-actions">
+                <a href="https://wa.me/919373484198?text=Hello%20TIRA%20Belle,%20I%20have%20a%20question%20about%20my%20loyalty%20points" target="_blank" class="btn btn-outline btn-sm" title="Contact Counter on WhatsApp">
+                    <i data-lucide="phone" data-size="15"></i>
+                    <span>WhatsApp</span>
+                </a>
                 <a href="index.html" class="btn btn-outline btn-sm">
                     <i data-lucide="arrow-left" data-size="16"></i>
                     <span>Menu</span>
@@ -71,17 +53,25 @@
             <!-- Search Form -->
             <form id="trackerSearchForm" onsubmit="event.preventDefault(); window.searchLoyalty();">
                 <div class="form-group">
-                    <label for="trackerInput" class="form-label">Customer Phone Number or Name</label>
-                    <div class="tracker-search-box">
-                        <input type="text" id="trackerInput" class="tracker-search-input" placeholder="e.g. 9876543210 or Jay" autocomplete="off" required>
-                        <button type="submit" class="btn btn-caramel" id="btnTrackOffer">
-                            <i data-lucide="search" data-size="15"></i>
-                            <span>Track Offer</span>
-                        </button>
-                        <button type="button" class="btn btn-outline" id="btnTrackerClear" onclick="window.clearLoyaltyTracker()" title="Clear search">
-                            <i data-lucide="rotate-ccw" data-size="15"></i>
-                            <span>Clear</span>
-                        </button>
+                    <label for="trackerInput" class="form-label">Customer Mobile Number or Guest Name</label>
+                    <div class="tracker-search-wrapper">
+                        <div class="tracker-input-box">
+                            <i data-lucide="search" data-size="18" class="tracker-input-icon"></i>
+                            <input type="text" id="trackerInput" class="tracker-search-input" placeholder="e.g. 9876543210 or your name" autocomplete="tel" inputmode="tel" required>
+                            <button type="button" class="tracker-input-clear-btn" id="btnTrackerClearInput" aria-label="Clear input" style="display: none;">
+                                <i data-lucide="x" data-size="16"></i>
+                            </button>
+                        </div>
+                        <div class="tracker-search-actions">
+                            <button type="submit" class="btn btn-caramel" id="btnTrackOffer">
+                                <i data-lucide="award" data-size="16"></i>
+                                <span>Track My Offer</span>
+                            </button>
+                            <button type="button" class="btn btn-outline" id="btnTrackerClear" onclick="window.clearLoyaltyTracker()" title="Reset search">
+                                <i data-lucide="rotate-ccw" data-size="15"></i>
+                                <span>Reset</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </form>
@@ -200,7 +190,7 @@
         <div class="tracker-card review-submit-card" id="reviewSection" style="margin-top: 32px;">
             <div style="text-align: center; margin-bottom: 24px;">
                 <div style="display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: var(--color-caramel-subtle); border-radius: 50%; color: var(--color-caramel); margin-bottom: 12px; box-shadow: 0 4px 12px rgba(183, 121, 61, 0.15);">
-                    <i data-lucide="star" data-size="24"></i>
+                    <i data-lucide="cake-slice" data-size="24"></i>
                 </div>
                 <h2 style="font-family: var(--font-heading); font-size: 1.5rem; color: var(--color-espresso); margin-bottom: 6px;">
                     Loved the Layers? Share Your Review!
@@ -210,15 +200,15 @@
                 </p>
             </div>
 
-            <form id="customerReviewForm" onsubmit="event.preventDefault(); window.submitCustomerReview();">
+            <form id="customerReviewForm">
                 <div class="review-form-grid">
                     <div class="form-group">
                         <label for="reviewName" class="form-label">Your Name <span style="color: #e74c3c;">*</span></label>
-                        <input type="text" id="reviewName" class="form-input" placeholder="e.g. Ananya Deshmukh" required autocomplete="name">
+                        <input type="text" id="reviewName" class="form-input" placeholder="Enter your name" required autocomplete="name">
                     </div>
                     <div class="form-group">
-                        <label for="reviewPhone" class="form-label">Phone Number <span style="font-size: 0.78rem; color: var(--color-text-muted); font-weight: normal;">(Optional, verified badge)</span></label>
-                        <input type="tel" id="reviewPhone" class="form-input" placeholder="e.g. 9876543210" autocomplete="tel">
+                        <label for="reviewPhone" class="form-label">Phone Number <span style="color: #e74c3c;">*</span></label>
+                        <input type="tel" id="reviewPhone" class="form-input" placeholder="Enter your mobile number" required autocomplete="tel">
                     </div>
                 </div>
 
@@ -227,14 +217,14 @@
                     <label class="form-label">Rate Your Experience <span style="color: #e74c3c;">*</span></label>
                     <div class="star-rating-box">
                         <div class="star-rating-stars" id="starRatingRow">
-                            <button type="button" class="star-pick-btn active" data-val="1" aria-label="1 star"><i data-lucide="star" data-size="24"></i></button>
-                            <button type="button" class="star-pick-btn active" data-val="2" aria-label="2 stars"><i data-lucide="star" data-size="24"></i></button>
-                            <button type="button" class="star-pick-btn active" data-val="3" aria-label="3 stars"><i data-lucide="star" data-size="24"></i></button>
-                            <button type="button" class="star-pick-btn active" data-val="4" aria-label="4 stars"><i data-lucide="star" data-size="24"></i></button>
-                            <button type="button" class="star-pick-btn active" data-val="5" aria-label="5 stars"><i data-lucide="star" data-size="24"></i></button>
+                            <button type="button" class="star-pick-btn" data-val="1" aria-label="1 slice"><i data-lucide="cake-slice" data-size="22"></i></button>
+                            <button type="button" class="star-pick-btn" data-val="2" aria-label="2 slices"><i data-lucide="cake-slice" data-size="22"></i></button>
+                            <button type="button" class="star-pick-btn" data-val="3" aria-label="3 slices"><i data-lucide="cake-slice" data-size="22"></i></button>
+                            <button type="button" class="star-pick-btn" data-val="4" aria-label="4 slices"><i data-lucide="cake-slice" data-size="22"></i></button>
+                            <button type="button" class="star-pick-btn" data-val="5" aria-label="5 slices"><i data-lucide="cake-slice" data-size="22"></i></button>
                         </div>
-                        <span class="star-rating-text" id="starRatingText">5 Stars • Exceptional!</span>
-                        <input type="hidden" id="reviewRatingVal" value="5">
+                        <span class="star-rating-text unselected" id="starRatingText">Select a rating</span>
+                        <input type="hidden" id="reviewRatingVal" value="">
                     </div>
                 </div>
 
@@ -243,25 +233,20 @@
                     <label class="form-label">What Did You Enjoy Most?</label>
                     <div class="favorite-pills-row">
                         <label class="favorite-pill-label">
-                            <input type="radio" name="reviewFavorite" value="Tiramisu – 150 g" checked>
-                            <span class="pill-chip">
-                                <i data-lucide="coffee" data-size="14"></i>
-                                <span>150 g Classic Cup</span>
-                            </span>
+                            <input type="radio" name="reviewFavorite" value="Classic – 150 g" checked>
+                            <span class="pill-chip">Classic – 150 g</span>
                         </label>
                         <label class="favorite-pill-label">
-                            <input type="radio" name="reviewFavorite" value="Tiramisu – 350 g">
-                            <span class="pill-chip">
-                                <i data-lucide="box" data-size="14"></i>
-                                <span>350 g Sharing Tub</span>
-                            </span>
+                            <input type="radio" name="reviewFavorite" value="Classic – 350 g">
+                            <span class="pill-chip">Classic – 350 g</span>
                         </label>
                         <label class="favorite-pill-label">
-                            <input type="radio" name="reviewFavorite" value="Both Sizes">
-                            <span class="pill-chip">
-                                <i data-lucide="heart" data-size="14"></i>
-                                <span>Both Sizes!</span>
-                            </span>
+                            <input type="radio" name="reviewFavorite" value="Chocolate – 150 g">
+                            <span class="pill-chip">Chocolate – 150 g</span>
+                        </label>
+                        <label class="favorite-pill-label">
+                            <input type="radio" name="reviewFavorite" value="Chocolate – 350 g">
+                            <span class="pill-chip">Chocolate – 350 g</span>
                         </label>
                     </div>
                 </div>
@@ -292,10 +277,10 @@
     <footer class="footer" style="margin-top: 60px;">
         <div class="container footer-bottom" style="border: none; padding-top: 0;">
             <p data-brand="copyright">© 2026 TIRA Belle • Handcrafted with love by Yash Chauhan &amp; Tejas Chauhan. All rights reserved.</p>
-            <div style="display: flex; gap: 20px;">
+            <!-- <div style="display: flex; gap: 20px;">
                 <a href="index.html" style="color: rgba(255,255,255,0.7);">Home Menu</a>
                 <a href="admin.html" style="color: rgba(255,255,255,0.7);">Admin Portal</a>
-            </div>
+            </div> -->
         </div>
     </footer>
 
@@ -303,11 +288,11 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <!-- Scripts -->
-    <script src="js/icons.js?v=6"></script>
-    <script src="js/pwa.js?v=6"></script>
-    <script src="js/alerts.js?v=6"></script>
-    <script src="js/db.js?v=6"></script>
-    <script src="js/tracker.js?v=6"></script>
+    <script src="js/icons.js?v=34"></script>
+    <script src="js/pwa.js?v=34"></script>
+    <script src="js/alerts.js?v=34"></script>
+    <script src="js/db.js?v=34"></script>
+    <script src="js/tracker.js?v=34"></script>
     <script>
         function fillAndSearch(query) {
             document.getElementById('trackerInput').value = query;

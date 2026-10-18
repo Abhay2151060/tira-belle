@@ -1,0 +1,126 @@
+import os
+from contextlib import asynccontextmanager
+from pathlib import Path
+from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+
+from backend.config import CORS_ORIGINS, BASE_DIR
+from backend.database import engine, Base, get_db, SessionLocal
+from backend.seed import seed_initial_data
+from backend.models import utcnow_iso
+
+from backend.routers import (
+    auth,
+    customers,
+    sales,
+    redemptions,
+    products,
+    categories,
+    upload,
+    reviews,
+    settings
+)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: ensure tables exist and initial seeds are present
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        seed_initial_data(db)
+    finally:
+        db.close()
+    yield
+    # Shutdown: clean up connection pool
+    engine.dispose()
+
+app = FastAPI(
+    title="TIRA Belle REST API",
+    description="High-performance backend API and loyalty engine for TIRA Belle Handcrafted Tiramisu.",
+    version="2.0.0",
+    lifespan=lifespan
+)
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount API Routers
+app.include_router(auth.router)
+app.include_router(customers.router)
+app.include_router(sales.router)
+app.include_router(redemptions.router)
+app.include_router(categories.router)
+app.include_router(products.router)
+app.include_router(upload.router)
+app.include_router(reviews.router)
+app.include_router(settings.router)
+
+@app.get("/api/health", tags=["Health"])
+def health_check(db: Session = Depends(get_db)):
+    db_status = "connected"
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    return {
+        "status": "ok",
+        "app": "TIRA Belle",
+        "version": "2.0.0",
+        "database": db_status,
+        "timestamp": utcnow_iso()
+    }
+
+# Mount Static Directories
+assets_path = BASE_DIR / "assets"
+css_path = BASE_DIR / "css"
+js_path = BASE_DIR / "js"
+
+if assets_path.exists():
+    app.mount("/assets", StaticFiles(directory=str(assets_path)), name="assets")
+if css_path.exists():
+    app.mount("/css", StaticFiles(directory=str(css_path)), name="css")
+if js_path.exists():
+    app.mount("/js", StaticFiles(directory=str(js_path)), name="js")
+
+# Mount Root Static HTML Pages
+@app.get("/")
+def get_root():
+    return FileResponse(BASE_DIR / "index.html")
+
+@app.get("/index.html")
+def get_index():
+    return FileResponse(BASE_DIR / "index.html")
+
+@app.get("/tracker.html")
+def get_tracker():
+    return FileResponse(BASE_DIR / "tracker.html")
+
+@app.get("/admin.html")
+def get_admin():
+    return FileResponse(BASE_DIR / "admin.html")
+
+@app.get("/manifest.json")
+def get_manifest():
+    return FileResponse(BASE_DIR / "manifest.json", media_type="application/manifest+json")
+
+@app.get("/sw.js")
+def get_sw():
+    return FileResponse(BASE_DIR / "sw.js", media_type="application/javascript")
+
+@app.get("/robots.txt")
+def get_robots():
+    return FileResponse(BASE_DIR / "robots.txt")
+
+@app.get("/sitemap.xml")
+def get_sitemap():
+    return FileResponse(BASE_DIR / "sitemap.xml", media_type="application/xml")

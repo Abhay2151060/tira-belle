@@ -9,6 +9,16 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPublicProducts();
     renderPublicLoyaltyInfo();
     renderPublicReviews();
+
+    // Auto-scroll smoothly to review section if redirected with #reviews hash
+    if (window.location.hash === '#reviews') {
+        setTimeout(() => {
+            const reviewsEl = document.getElementById('reviews');
+            if (reviewsEl) {
+                reviewsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 200);
+    }
 });
 
 // Re-render when business settings change centrally or cross-tab
@@ -18,25 +28,136 @@ window.addEventListener('tira-settings-changed', () => {
     renderPublicLoyaltyInfo();
 });
 
+// Re-render when categories or products change
+window.addEventListener('tira-categories-changed', () => {
+    renderPublicProducts();
+});
+
+window.addEventListener('tira-products-changed', () => {
+    renderPublicProducts();
+});
+
 // Re-render when customer reviews are added or deleted
 window.addEventListener('tira-reviews-changed', () => {
     renderPublicReviews();
 });
 
+// Re-render when backend finishes synchronizing dynamic database data
+window.addEventListener('tira-backend-synced', () => {
+    renderStorefrontBranding();
+    renderPublicProducts();
+    renderPublicLoyaltyInfo();
+    renderPublicReviews();
+});
+
 function initMobileNav() {
     const toggle = document.getElementById('mobileNavToggle');
+    const drawer = document.getElementById('navDrawer');
+    const backdrop = document.getElementById('mobileNavBackdrop');
+    const closeBtn = document.getElementById('mobileNavClose');
     const links = document.getElementById('primaryNavLinks');
-    if (toggle && links) {
-        toggle.addEventListener('click', () => {
-            links.classList.toggle('mobile-open');
-        });
 
-        // Close on link click
-        links.querySelectorAll('a').forEach(a => {
+    function openDrawer() {
+        if (drawer) drawer.classList.add('mobile-open');
+        if (backdrop) backdrop.classList.add('active');
+        document.body.classList.add('mobile-nav-active');
+        if (toggle) {
+            toggle.classList.add('active');
+            toggle.setAttribute('aria-expanded', 'true');
+            toggle.setAttribute('aria-label', 'Close navigation menu');
+            toggle.innerHTML = '<i data-lucide="x" data-size="22"></i>';
+        }
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+    }
+
+    function closeDrawer() {
+        if (drawer) drawer.classList.remove('mobile-open');
+        if (backdrop) backdrop.classList.remove('active');
+        document.body.classList.remove('mobile-nav-active');
+        if (toggle) {
+            toggle.classList.remove('active');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-label', 'Open navigation menu');
+            toggle.innerHTML = '<i data-lucide="menu" data-size="22"></i>';
+        }
+        if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons();
+        }
+    }
+
+    if (toggle) {
+        toggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (drawer && drawer.classList.contains('mobile-open')) {
+                closeDrawer();
+            } else {
+                openDrawer();
+            }
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeDrawer();
+        });
+    }
+
+    if (backdrop) {
+        backdrop.addEventListener('click', (e) => {
+            e.preventDefault();
+            closeDrawer();
+        });
+    }
+
+    if (drawer) {
+        drawer.querySelectorAll('a').forEach(a => {
             a.addEventListener('click', () => {
-                links.classList.remove('mobile-open');
+                closeDrawer();
             });
         });
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && drawer && drawer.classList.contains('mobile-open')) {
+            closeDrawer();
+        }
+    });
+
+    // Scrollspy for Mobile Floating Bottom Bar
+    const bottomBar = document.getElementById('mobileBottomBar');
+    if (bottomBar) {
+        const sections = [
+            { id: 'menu', linkId: 'mbItemMenu' },
+            { id: 'experience', linkId: 'mbItemMenu' },
+            { id: 'loyalty', linkId: 'mbItemRewards' },
+            { id: 'contact', linkId: 'mbItemContact' }
+        ];
+
+        window.addEventListener('scroll', () => {
+            const scrollPos = window.scrollY + 200;
+            let currentSec = null;
+            sections.forEach(sec => {
+                const el = document.getElementById(sec.id);
+                if (el && el.offsetTop <= scrollPos) {
+                    currentSec = sec.linkId;
+                }
+            });
+
+            if (currentSec) {
+                bottomBar.querySelectorAll('.mobile-bottom-item').forEach(item => {
+                    if (item.id === currentSec) {
+                        item.classList.add('active');
+                    } else if (item.id !== 'mbItemRewards' && item.id !== 'mbItemWhatsapp') {
+                        item.classList.remove('active');
+                    }
+                });
+            }
+        }, { passive: true });
     }
 }
 
@@ -63,6 +184,10 @@ function renderPublicLoyaltyInfo() {
     if (step2Title) {
         step2Title.textContent = `Collect ${threshold} Stamps`;
     }
+    const step2Desc = document.getElementById('loyaltyStep2Desc');
+    if (step2Desc) {
+        step2Desc.textContent = `Each cup adds 1 stamp. Buy ${threshold} eligible cups across any dates or visits — they all count!`;
+    }
 
     // 4. Step 3
     const step3Title = document.getElementById('loyaltyStep3Title');
@@ -76,20 +201,56 @@ function renderPublicLoyaltyInfo() {
         cardBadge.textContent = `${threshold} Stamps = 1 Free Cup`;
     }
 
-    // 6. Preview Stamp Row (render threshold slots)
+    // 6. Preview Stamp Row: [threshold] Paid Slots + 1 Separate Reward Slot
     const stampsRow = document.getElementById('loyaltyPreviewStampsRow');
     if (stampsRow) {
         stampsRow.innerHTML = '';
+        const totalSlots = threshold + 1;
+        const gridCols = totalSlots <= 7 ? totalSlots : Math.ceil(totalSlots / 2);
+        stampsRow.style.setProperty('--stamp-cols', gridCols);
+
+        // Paid Stamp Slots: 1 to threshold
         for (let i = 1; i <= threshold; i++) {
-            const isReward = i === threshold;
             const slot = document.createElement('div');
-            slot.className = `stamp-slot ${isReward ? 'reward-slot stamped' : 'stamped'}`;
+            slot.className = 'stamp-slot stamped';
             slot.innerHTML = `
-                <span class="stamp-icon">${isReward ? '<i data-lucide="gift" data-size="20"></i>' : '<i data-lucide="coffee" data-size="18"></i>'}</span>
-                <span class="stamp-number">${isReward ? 'FREE' : `#${i}`}</span>
+                <div class="loyalty-cup-container preview-cup">
+                    <img src="assets/cup-empty.png" 
+                         alt="Cup #${i} Empty" 
+                         class="cup-img cup-empty" 
+                         width="110" height="110" 
+                         loading="eager" draggable="false">
+                    <img src="assets/cup-filled.png" 
+                         alt="Cup #${i} Filled" 
+                         class="cup-img cup-filled" 
+                         width="110" height="110" 
+                         loading="eager" draggable="false">
+                </div>
+                <span class="stamp-number">#${i}</span>
             `;
             stampsRow.appendChild(slot);
         }
+
+        // Separate Reward Slot (distinct green styling)
+        const rewardSlot = document.createElement('div');
+        rewardSlot.className = 'stamp-slot reward-slot stamped';
+        rewardSlot.innerHTML = `
+            <div class="loyalty-cup-container preview-cup">
+                <img src="assets/cup-empty.png" 
+                     alt="Free Reward Cup Empty" 
+                     class="cup-img cup-empty" 
+                     width="110" height="110" 
+                     loading="eager" draggable="false">
+                <img src="assets/cup-filled.png" 
+                     alt="Free Reward Cup Filled" 
+                     class="cup-img cup-filled" 
+                     width="110" height="110" 
+                     loading="eager" draggable="false">
+                <div class="cup-reward-badge" style="background: #27ae60;">FREE</div>
+            </div>
+            <span class="stamp-number" style="color: #27ae60; font-weight: 800;">FREE</span>
+        `;
+        stampsRow.appendChild(rewardSlot);
     }
 
     if (window.lucide) {
@@ -97,27 +258,63 @@ function renderPublicLoyaltyInfo() {
     }
 }
 
+let activeStorefrontCategory = 'all';
+
+window.setStorefrontCategory = function(catId) {
+    activeStorefrontCategory = catId;
+    renderPublicProducts();
+};
+
 function renderPublicProducts() {
     const container = document.getElementById('publicProductsGrid');
+    const navContainer = document.getElementById('storefrontCategoryNav');
     if (!container) return;
 
-    const products = window.TiraDB.getProducts(true); // Active products only
+    const allActiveProducts = window.TiraDB.getProducts(true); // Active products only
+    const categories = window.TiraDB.getCategories(true); // Active categories only
     const settings = window.TiraDB.getSettings();
     const curr = settings.currency || '₹';
 
-    container.innerHTML = '';
-    products.forEach(p => {
-        const card = document.createElement('div');
-        card.className = 'product-card';
-        card.innerHTML = `
+    // 1. Render Category Navigation Tabs
+    if (navContainer) {
+        let navHtml = `
+            <button type="button" class="category-nav-pill ${activeStorefrontCategory === 'all' ? 'active' : ''}" onclick="setStorefrontCategory('all')">
+                <span>All Tiramisu</span>
+                <span class="cat-count-badge">${allActiveProducts.length}</span>
+            </button>
+        `;
+        categories.forEach(cat => {
+            const count = allActiveProducts.filter(p => p.categoryId === cat.id).length;
+            navHtml += `
+                <button type="button" class="category-nav-pill ${activeStorefrontCategory === cat.id ? 'active' : ''}" onclick="setStorefrontCategory('${cat.id}')">
+                    <span>${escapeHtml(cat.name)}</span>
+                    <span class="cat-count-badge">${count}</span>
+                </button>
+            `;
+        });
+        navContainer.innerHTML = navHtml;
+    }
+
+    // Helper to render an individual product card
+    const renderCard = (p) => {
+        let badgeText = p.badge || '';
+        if (!badgeText) {
+            const isChoco = (p.categoryId === 'cat-chocolate') || (p.name || '').toLowerCase().includes('choco');
+            const is350 = (p.weight || '').includes('350') || (p.name || '').includes('350');
+            badgeText = isChoco 
+                ? (is350 ? 'Best Value • Sharing Tub' : 'Chocolate Single Serve')
+                : (is350 ? 'Best Value • Sharing Tub' : 'Classic Single Serve');
+        }
+        return `
+        <div class="product-card">
             <div class="product-media">
-                <img src="${p.image || 'assets/tiramisu-150g.jpg'}" alt="${p.name}" onerror="this.src='assets/tira-belle-poster.jpg'">
-                <span class="product-weight-tag">${p.weight}</span>
-                ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ''}
+                <img src="${p.image || 'assets/classic/tiramisu-classic-150 g.png'}" alt="${escapeHtml(p.name)}" onerror="this.src='assets/poster/tiramisu-classic-poster.png'">
+                <span class="product-weight-tag">${escapeHtml(p.weight || '')}</span>
+                ${badgeText ? `<span class="product-badge">${escapeHtml(badgeText)}</span>` : ''}
             </div>
             <div class="product-content">
-                <h3 class="product-name">${p.name}</h3>
-                <p class="product-desc">${p.description}</p>
+                <h3 class="product-name">${escapeHtml(p.name)}</h3>
+                <p class="product-desc">${escapeHtml(p.description || '')}</p>
                 <div class="product-footer">
                     <div class="product-price-box">
                         <span class="price-label">Counter Price</span>
@@ -128,9 +325,101 @@ function renderPublicProducts() {
                     </div>
                 </div>
             </div>
+        </div>
+    `;
+    };
+
+    container.innerHTML = '';
+
+    if (!allActiveProducts.length) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: var(--color-text-muted);">
+                <i data-lucide="coffee" data-size="36" style="margin-bottom: 10px; color: var(--color-caramel);"></i>
+                <h3 style="font-family: var(--font-heading); color: var(--color-espresso); margin-bottom: 6px;">Fresh Batch In The Making</h3>
+                <p>Our artisan chefs are whipping fresh mascarpone cream! Please check back in a few moments.</p>
+            </div>
         `;
-        container.appendChild(card);
-    });
+        if (window.lucide) window.lucide.createIcons();
+        return;
+    }
+
+    // 2. Render Category-Wise Showcase Groups
+    if (activeStorefrontCategory === 'all') {
+        let hasAnyGroup = false;
+
+        // Render each category in defined order
+        categories.forEach(cat => {
+            const prodsInCat = allActiveProducts.filter(p => p.categoryId === cat.id);
+            if (prodsInCat.length > 0) {
+                hasAnyGroup = true;
+                const groupEl = document.createElement('div');
+                groupEl.className = 'category-showcase-group';
+                groupEl.id = `cat-group-${cat.id}`;
+                groupEl.innerHTML = `
+                    <div class="category-showcase-header">
+                        <div>
+                            <div class="category-header-main">
+                                <h3 class="category-header-title">${escapeHtml(cat.name)}</h3>
+                                <span class="category-header-badge">${prodsInCat.length} Size${prodsInCat.length === 1 ? '' : 's'}</span>
+                            </div>
+                            ${cat.description ? `<p class="category-header-desc">${escapeHtml(cat.description)}</p>` : ''}
+                        </div>
+                    </div>
+                    <div class="products-grid">
+                        ${prodsInCat.map(renderCard).join('')}
+                    </div>
+                `;
+                container.appendChild(groupEl);
+            }
+        });
+
+        // Any active products unassigned to a category
+        const uncategorized = allActiveProducts.filter(p => !p.categoryId || !categories.some(c => c.id === p.categoryId));
+        if (uncategorized.length > 0) {
+            const groupEl = document.createElement('div');
+            groupEl.className = 'category-showcase-group';
+            groupEl.innerHTML = `
+                <div class="category-showcase-header">
+                    <div>
+                        <div class="category-header-main">
+                            <h3 class="category-header-title">Artisan Dessert Specials</h3>
+                            <span class="category-header-badge">${uncategorized.length} Item${uncategorized.length === 1 ? '' : 's'}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="products-grid">
+                    ${uncategorized.map(renderCard).join('')}
+                </div>
+            `;
+            container.appendChild(groupEl);
+        }
+    } else {
+        // Filtered view for a single selected category
+        const selectedCat = categories.find(c => c.id === activeStorefrontCategory);
+        const filteredProds = allActiveProducts.filter(p => p.categoryId === activeStorefrontCategory);
+
+        if (selectedCat) {
+            const groupEl = document.createElement('div');
+            groupEl.className = 'category-showcase-group';
+            groupEl.innerHTML = `
+                <div class="category-showcase-header">
+                    <div>
+                        <div class="category-header-main">
+                            <h3 class="category-header-title">${escapeHtml(selectedCat.name)}</h3>
+                            <span class="category-header-badge">${filteredProds.length} Size${filteredProds.length === 1 ? '' : 's'}</span>
+                        </div>
+                        ${selectedCat.description ? `<p class="category-header-desc">${escapeHtml(selectedCat.description)}</p>` : ''}
+                    </div>
+                </div>
+                <div class="products-grid">
+                    ${filteredProds.length > 0 
+                        ? filteredProds.map(renderCard).join('') 
+                        : '<div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: var(--color-text-muted);">No products currently available in this category.</div>'}
+                </div>
+            `;
+            container.appendChild(groupEl);
+        }
+    }
 
     if (window.lucide) {
         window.lucide.createIcons();
@@ -226,8 +515,6 @@ let reviewsAutoPlayTimer = null;
 function renderPublicReviews() {
     const track = document.getElementById('reviewsCarouselTrack');
     const dotsContainer = document.getElementById('reviewsCarouselDots');
-    const prevBtn = document.getElementById('revBtnPrev');
-    const nextBtn = document.getElementById('revBtnNext');
 
     if (!track) return;
     if (!window.TiraDB) return;
@@ -250,14 +537,9 @@ function renderPublicReviews() {
                 </a>
             </div>
         `;
-        if (prevBtn) prevBtn.style.display = 'none';
-        if (nextBtn) nextBtn.style.display = 'none';
         if (window.lucide) window.lucide.createIcons();
         return;
     }
-
-    if (prevBtn) prevBtn.style.display = 'flex';
-    if (nextBtn) nextBtn.style.display = 'flex';
 
     // Pastel gradient avatars for variety
     const AVATAR_GRADIENTS = [
@@ -308,6 +590,11 @@ function renderPublicReviews() {
         const card = document.createElement('div');
         card.className = 'review-card';
         card.setAttribute('data-index', idx);
+        let favIcon = 'cake-slice';
+        if (safeFav.includes('Chocolate – 350') || safeFav.includes('Chocolate - 350')) favIcon = 'ice-cream-bowl';
+        else if (safeFav.includes('Chocolate')) favIcon = 'cookie';
+        else if (safeFav.includes('350')) favIcon = 'cake';
+
         card.innerHTML = `
             <div class="review-card-top">
                 <div class="review-stars-wrap">${starsHtml}</div>
@@ -324,7 +611,7 @@ function renderPublicReviews() {
                         ${rev.verified ? `<span class="review-verified-badge" title="Verified Customer"><i data-lucide="badge-check" data-size="13"></i> Verified Guest</span>` : ''}
                     </div>
                     <div class="review-extra-tags">
-                        <span class="review-cup-tag"><i data-lucide="coffee" data-size="12"></i> ${safeFav}</span>
+                        <span class="review-cup-tag"><i data-lucide="${favIcon}" data-size="12"></i> ${safeFav}</span>
                         ${dateDisplay ? `<span class="review-date-tag">${dateDisplay}</span>` : ''}
                     </div>
                 </div>
@@ -350,18 +637,18 @@ function renderPublicReviews() {
     }
 
     // Attach Carousel Navigation Event Listeners
-    setupReviewsCarouselInteractions(track, prevBtn, nextBtn, dotsContainer);
+    setupReviewsCarouselInteractions(track, dotsContainer);
 }
 
-function setupReviewsCarouselInteractions(track, prevBtn, nextBtn, dotsContainer) {
+function setupReviewsCarouselInteractions(track, dotsContainer) {
     if (!track) return;
 
     function getCardWidth() {
         const firstCard = track.querySelector('.review-card');
         if (firstCard) {
-            return firstCard.offsetWidth + 20; // width + gap
+            return firstCard.offsetWidth + 24; // card width + gap
         }
-        return 340;
+        return 384;
     }
 
     function scrollNext() {
@@ -385,19 +672,59 @@ function setupReviewsCarouselInteractions(track, prevBtn, nextBtn, dotsContainer
         }
     }
 
-    if (nextBtn) {
-        nextBtn.onclick = () => {
-            stopReviewsAutoPlay();
-            scrollNext();
-        };
-    }
+    // ==========================================
+    // Mouse Drag-to-Scroll (Desktop)
+    // ==========================================
+    let isDown = false;
+    let startX = 0;
+    let initialScrollLeft = 0;
 
-    if (prevBtn) {
-        prevBtn.onclick = () => {
+    track.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return; // Only primary left mouse click
+        isDown = true;
+        track.classList.add('is-dragging');
+        startX = e.pageX - track.offsetLeft;
+        initialScrollLeft = track.scrollLeft;
+        stopReviewsAutoPlay();
+    });
+
+    const stopDragging = () => {
+        if (!isDown) return;
+        isDown = false;
+        track.classList.remove('is-dragging');
+        track.style.scrollSnapType = 'x mandatory';
+        track.style.scrollBehavior = 'smooth';
+        startReviewsAutoPlay(scrollNext);
+    };
+
+    window.addEventListener('mouseup', stopDragging);
+
+    track.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const currentX = e.pageX - track.offsetLeft;
+        const walk = (currentX - startX) * 1.35;
+        track.scrollLeft = initialScrollLeft - walk;
+    });
+
+    // ==========================================
+    // Mouse Wheel / Trackpad Smooth Horizontal Scroll
+    // ==========================================
+    track.addEventListener('wheel', (e) => {
+        // Redirect vertical wheel scroll to horizontal smoothly
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && Math.abs(e.deltaY) > 4) {
+            e.preventDefault();
             stopReviewsAutoPlay();
-            scrollPrev();
-        };
-    }
+            track.scrollBy({
+                left: e.deltaY * 1.25,
+                behavior: 'smooth'
+            });
+            clearTimeout(track._wheelTimeout);
+            track._wheelTimeout = setTimeout(() => {
+                startReviewsAutoPlay(scrollNext);
+            }, 3000);
+        }
+    }, { passive: false });
 
     // Update active dot based on current scroll position
     track.addEventListener('scroll', () => {
@@ -415,6 +742,9 @@ function setupReviewsCarouselInteractions(track, prevBtn, nextBtn, dotsContainer
     }, { passive: true });
 
     // Keyboard navigation when track is focused
+    track.setAttribute('tabindex', '0');
+    track.setAttribute('role', 'region');
+    track.setAttribute('aria-label', 'Customer Reviews Carousel');
     track.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowLeft') {
             scrollPrev();
@@ -423,11 +753,13 @@ function setupReviewsCarouselInteractions(track, prevBtn, nextBtn, dotsContainer
         }
     });
 
-    // Auto-play timer (advances every 4.5 seconds, pauses on hover)
+    // Auto-play timer (advances smoothly, pauses on interaction)
     startReviewsAutoPlay(scrollNext);
 
     track.addEventListener('mouseenter', stopReviewsAutoPlay);
-    track.addEventListener('mouseleave', () => startReviewsAutoPlay(scrollNext));
+    track.addEventListener('mouseleave', () => {
+        if (!isDown) startReviewsAutoPlay(scrollNext);
+    });
     track.addEventListener('touchstart', stopReviewsAutoPlay, { passive: true });
     track.addEventListener('touchend', () => startReviewsAutoPlay(scrollNext), { passive: true });
 }

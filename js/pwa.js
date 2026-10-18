@@ -44,7 +44,11 @@
         // Show install button if present on page
         const installBtns = document.querySelectorAll('.pwa-install-btn');
         installBtns.forEach(btn => {
-            btn.style.display = 'inline-flex';
+            if (window.innerWidth > 768 || !btn.closest('.nav-actions')) {
+                btn.style.display = 'inline-flex';
+            } else {
+                btn.style.display = 'none';
+            }
             btn.onclick = () => {
                 if (deferredPrompt) {
                     deferredPrompt.prompt();

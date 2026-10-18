@@ -8,13 +8,33 @@ document.addEventListener('DOMContentLoaded', () => {
         window.TiraDB.applyGlobalBranding();
     }
     updateTrackerRuleText();
+
+    // Mobile input quick clear handler
+    const trackerInput = document.getElementById('trackerInput');
+    const clearInputBtn = document.getElementById('btnTrackerClearInput');
+    if (trackerInput && clearInputBtn) {
+        trackerInput.addEventListener('input', () => {
+            clearInputBtn.style.display = trackerInput.value.trim().length > 0 ? 'inline-flex' : 'none';
+        });
+        clearInputBtn.addEventListener('click', () => {
+            trackerInput.value = '';
+            clearInputBtn.style.display = 'none';
+            trackerInput.focus();
+        });
+    }
 });
+
+let lastTrackedPhone = null;
 
 window.addEventListener('tira-settings-changed', () => {
     if (window.TiraDB) {
         window.TiraDB.applyGlobalBranding();
     }
     updateTrackerRuleText();
+    if (lastTrackedPhone && window.TiraDB) {
+        const loyalty = window.TiraDB.getCustomerLoyalty(lastTrackedPhone);
+        if (loyalty) renderLoyaltyResult(loyalty);
+    }
 });
 
 function updateTrackerRuleText() {
@@ -40,25 +60,16 @@ function maskPhone(phone) {
 
 // Show Toast notification
 function showToast(message, type = 'info', title = null) {
-    if (window.TiraAlert) {
+    if (window.TiraAlert && typeof window.TiraAlert.toast === 'function') {
         return window.TiraAlert.toast({ message, type, title });
     }
-    const container = document.getElementById('toastContainer');
-    if (!container) return;
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = `<i data-lucide="bell" data-size="16"></i> <div>${message}</div>`;
-    container.appendChild(toast);
-    if (window.lucide) window.lucide.createIcons();
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateY(10px)';
-        setTimeout(() => toast.remove(), 300);
-    }, 3500);
+    if (typeof window.showToast === 'function' && window.showToast !== showToast) {
+        return window.showToast(message, type, title);
+    }
 }
 
 // Main search loyalty function
-window.searchLoyalty = function(specifiedPhone = null) {
+window.searchLoyalty = async function(specifiedPhone = null) {
     const input = document.getElementById('trackerInput');
     const query = specifiedPhone || (input ? input.value.trim() : '');
 
@@ -79,18 +90,41 @@ window.searchLoyalty = function(specifiedPhone = null) {
 
     const cleanDigits = query.replace(/\D/g, '');
     let matchedPhone = null;
+    let loyalty = null;
 
     if (specifiedPhone) {
-        matchedPhone = specifiedPhone;
+        matchedPhone = specifiedPhone.replace(/\D/g, '');
     } else if (cleanDigits.length >= 10) {
-        // Direct phone lookup
-        const found = window.TiraDB.findCustomerByPhone(cleanDigits);
-        if (found) {
-            matchedPhone = found.phone;
+        // Direct phone lookup (Read-only check - NEVER auto-register!)
+        if (window.TiraDB) {
+            // Check server directly for live loyalty
+            const remoteLoyalty = await window.TiraDB.apiRequest(`/customers/${cleanDigits}`);
+            if (remoteLoyalty.ok && remoteLoyalty.data && remoteLoyalty.data.customer) {
+                matchedPhone = cleanDigits;
+                loyalty = remoteLoyalty.data;
+            }
+        }
+        if (!matchedPhone && window.TiraDB) {
+            const localCust = window.TiraDB.findCustomerByPhone(cleanDigits);
+            if (localCust) {
+                matchedPhone = localCust.phone;
+            }
         }
     } else {
         // Search by name or partial phone
-        const matches = window.TiraDB.searchCustomer(query);
+        let matches = [];
+        // 1. Search remote backend if available
+        if (window.TiraDB) {
+            const remoteSearch = await window.TiraDB.apiRequest(`/customers?search=${encodeURIComponent(query.trim())}`);
+            if (remoteSearch.ok && Array.isArray(remoteSearch.data) && remoteSearch.data.length > 0) {
+                matches = remoteSearch.data;
+            }
+        }
+        // 2. Fall back to local search if remote returned nothing
+        if (matches.length === 0 && window.TiraDB) {
+            matches = window.TiraDB.searchCustomer(query.trim());
+        }
+
         if (matches.length === 1) {
             matchedPhone = matches[0].phone;
         } else if (matches.length > 1) {
@@ -98,21 +132,23 @@ window.searchLoyalty = function(specifiedPhone = null) {
             if (ambiguousContainer && ambiguousCards) {
                 ambiguousCards.innerHTML = '';
                 matches.forEach(c => {
-                    const loyalty = window.TiraDB.getCustomerLoyalty(c.phone);
+                    const cLoyalty = window.TiraDB ? window.TiraDB.getCustomerLoyalty(c.phone) : null;
                     const safeName = typeof escapeHtml === 'function' ? escapeHtml(c.name) : c.name;
                     const safePhone = typeof escapeHtml === 'function' ? escapeHtml(maskPhone(c.phone)) : maskPhone(c.phone);
                     const btn = document.createElement('div');
                     btn.className = 'history-item';
                     btn.style.cursor = 'pointer';
                     btn.style.border = '1px solid var(--color-border)';
+                    const isElig = cLoyalty ? cLoyalty.isEligible : false;
+                    const prog = cLoyalty ? `${cLoyalty.currentCycleProgress}/${cLoyalty.threshold} Cups` : 'Registered';
                     btn.innerHTML = `
                         <div>
                             <strong>${safeName}</strong> • 
                             <span style="color: var(--color-text-muted); font-size: 0.85rem;">${safePhone}</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <span class="badge ${loyalty.isEligible ? 'badge-success' : 'badge-warning'}">
-                                ${loyalty.isEligible ? 'Eligible for Free Reward' : `${loyalty.currentCycleProgress}/${loyalty.threshold} Cups`}
+                            <span class="badge ${isElig ? 'badge-success' : 'badge-warning'}">
+                                ${isElig ? 'Eligible for Free Reward' : prog}
                             </span>
                             <span class="btn btn-sm btn-outline">Select</span>
                         </div>
@@ -128,11 +164,41 @@ window.searchLoyalty = function(specifiedPhone = null) {
 
     if (!matchedPhone) {
         if (notFoundBox) notFoundBox.style.display = 'block';
+        if (resultPanel) resultPanel.classList.remove('active');
         return;
     }
 
-    // Retrieve full loyalty details
-    const loyalty = window.TiraDB.getCustomerLoyalty(matchedPhone);
+    // Retrieve full loyalty details if not already fetched
+    if (!loyalty) {
+        if (window.TiraDB) {
+            const remoteRes = await window.TiraDB.apiRequest(`/customers/${matchedPhone}`);
+            if (remoteRes.ok && remoteRes.data) {
+                loyalty = remoteRes.data;
+            }
+        }
+        if (!loyalty && window.TiraDB) {
+            const localLoyalty = window.TiraDB.getCustomerLoyalty(matchedPhone);
+            if (localLoyalty && localLoyalty.exists) {
+                loyalty = localLoyalty;
+            }
+        }
+    }
+
+    // Ensure customer genuinely exists in the system
+    const customerExists = loyalty && (
+        (loyalty.exists) ||
+        (loyalty.customer && loyalty.customer.createdAt) ||
+        (loyalty.totalCupsPurchased > 0) ||
+        (loyalty.completedPurchasesCount > 0) ||
+        (window.TiraDB && window.TiraDB.findCustomerByPhone(matchedPhone))
+    );
+
+    if (!customerExists) {
+        if (notFoundBox) notFoundBox.style.display = 'block';
+        if (resultPanel) resultPanel.classList.remove('active');
+        return;
+    }
+
     renderLoyaltyResult(loyalty);
 };
 
@@ -140,6 +206,7 @@ window.searchLoyalty = function(specifiedPhone = null) {
 function renderLoyaltyResult(loyalty) {
     const resultPanel = document.getElementById('trackerResultPanel');
     if (!resultPanel) return;
+    lastTrackedPhone = loyalty.customer.phone;
 
     // Header info
     const safeCustomerName = typeof escapeHtml === 'function' ? escapeHtml(loyalty.customer.name || 'Valued Guest') : (loyalty.customer.name || 'Valued Guest');
@@ -181,30 +248,61 @@ function renderLoyaltyResult(loyalty) {
         }
     }
 
-    // Render 5 Stamps Grid
+    // Render Stamps Grid: [threshold] Paid Slots + 1 Separate Reward Slot
     const stampsGrid = document.getElementById('resStampsGrid');
     if (stampsGrid) {
         stampsGrid.innerHTML = '';
-        const threshold = loyalty.threshold || 5;
-        const currentStamps = loyalty.isEligible ? threshold : loyalty.currentCycleProgress;
+        const threshold = Math.max(1, loyalty.threshold || 5);
+        const currentStamps = loyalty.currentCycleProgress;
+        const totalSlots = threshold + 1;
+        const gridCols = totalSlots <= 7 ? totalSlots : Math.ceil(totalSlots / 2);
+        stampsGrid.style.setProperty('--stamp-cols', gridCols);
 
+        // Paid Stamp Slots: 1 to threshold
         for (let i = 1; i <= threshold; i++) {
             const isStamped = i <= currentStamps;
-            const isFinalReward = i === threshold;
-
             const box = document.createElement('div');
-            box.className = `stamp-box-large ${isStamped ? (isFinalReward && loyalty.isEligible ? 'filled-reward' : 'filled') : ''}`;
+            box.className = `stamp-box-large ${isStamped ? 'filled' : ''}`;
             
-            let stampIcon = '<i data-lucide="coffee" data-size="26"></i>';
-            if (isFinalReward) stampIcon = isStamped && loyalty.isEligible ? '<i data-lucide="gift" data-size="26"></i>' : '<i data-lucide="award" data-size="26"></i>';
-            else if (isStamped) stampIcon = '<i data-lucide="coffee" data-size="26"></i>';
-
             box.innerHTML = `
-                <div class="stamp-img">${stampIcon}</div>
-                <div class="stamp-num-badge">${isFinalReward ? 'FREE' : `Cup #${i}`}</div>
+                <div class="loyalty-cup-container">
+                    <img src="assets/cup-empty.png" 
+                         alt="Cup #${i} Empty" 
+                         class="cup-img cup-empty" 
+                         width="110" height="110" 
+                         loading="eager" draggable="false">
+                    <img src="assets/cup-filled.png" 
+                         alt="Cup #${i} Filled" 
+                         class="cup-img cup-filled" 
+                         width="110" height="110" 
+                         loading="eager" draggable="false">
+                </div>
+                <div class="stamp-num-badge">Cup #${i}</div>
             `;
             stampsGrid.appendChild(box);
         }
+
+        // Separate Reward Slot (distinct reward slot)
+        const isRewardUnlocked = !!loyalty.isEligible;
+        const rewardBox = document.createElement('div');
+        rewardBox.className = `stamp-box-large reward-slot ${isRewardUnlocked ? 'filled-reward' : ''}`;
+        rewardBox.innerHTML = `
+            <div class="loyalty-cup-container">
+                <img src="assets/cup-empty.png" 
+                     alt="Free Reward Cup Empty" 
+                     class="cup-img cup-empty" 
+                     width="110" height="110" 
+                     loading="eager" draggable="false">
+                <img src="assets/cup-filled.png" 
+                     alt="Free Reward Cup Filled" 
+                     class="cup-img cup-filled" 
+                     width="110" height="110" 
+                     loading="eager" draggable="false">
+                <div class="cup-reward-badge" ${isRewardUnlocked ? 'style="background: #27ae60;"' : ''}>${isRewardUnlocked ? 'FREE' : 'GIFT'}</div>
+            </div>
+            <div class="stamp-num-badge" ${isRewardUnlocked ? 'style="color: #27ae60; font-weight: 800;"' : 'style="color: #27ae60; font-weight: 700;"'}>FREE CUP</div>
+        `;
+        stampsGrid.appendChild(rewardBox);
     }
 
     // Numbers & Stats
@@ -251,23 +349,24 @@ function renderLoyaltyResult(loyalty) {
         window.lucide.createIcons();
     }
 
-    // Auto-populate review form with customer info if found
-    if (loyalty.customer) {
-        autoFillReviewFromCustomer(loyalty.customer.name, loyalty.customer.phone);
-    }
-
     // Show Result Panel smoothly
     resultPanel.classList.add('active');
-    resultPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Scroll smoothly to customer results with space for sticky navbar
+    setTimeout(() => {
+        resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
 }
 
 window.clearLoyaltyTracker = function() {
+    lastTrackedPhone = null;
     const input = document.getElementById('trackerInput');
+    const clearInputBtn = document.getElementById('btnTrackerClearInput');
     const resultPanel = document.getElementById('trackerResultPanel');
     const notFound = document.getElementById('trackerNotFound');
     const ambiguous = document.getElementById('ambiguousCustomersList');
 
     if (input) input.value = '';
+    if (clearInputBtn) clearInputBtn.style.display = 'none';
     if (resultPanel) resultPanel.classList.remove('active');
     if (notFound) notFound.style.display = 'none';
     if (ambiguous) ambiguous.style.display = 'none';
@@ -279,11 +378,11 @@ window.clearLoyaltyTracker = function() {
 // Customer Review Submission Logic
 // ==========================================================================
 const RATING_LABELS = {
-    1: '1 Star • Needs Improvement',
-    2: '2 Stars • Fair',
-    3: '3 Stars • Good & Enjoyable',
-    4: '4 Stars • Very Good!',
-    5: '5 Stars • Exceptional!'
+    1: '1 Slice • Needs Improvement',
+    2: '2 Slices • Fair',
+    3: '3 Slices • Good & Enjoyable',
+    4: '4 Slices • Very Good!',
+    5: '5 Slices • Exceptional!'
 };
 
 function initReviewForm() {
@@ -301,7 +400,11 @@ function initReviewForm() {
             btn.addEventListener('click', () => {
                 ratingInput.value = val;
                 updateStarDisplay(val);
-                if (ratingText) ratingText.textContent = RATING_LABELS[val] || `${val} Stars`;
+                if (ratingText) {
+                    ratingText.textContent = RATING_LABELS[val] || `${val} Slices`;
+                    ratingText.classList.remove('unselected');
+                    ratingText.style.color = 'var(--color-espresso)';
+                }
             });
 
             btn.addEventListener('mouseenter', () => {
@@ -310,7 +413,7 @@ function initReviewForm() {
         });
 
         starRow.addEventListener('mouseleave', () => {
-            const currentVal = parseInt(ratingInput.value, 10) || 5;
+            const currentVal = parseInt(ratingInput.value, 10) || 0;
             updateStarDisplay(currentVal);
         });
     }
@@ -335,8 +438,9 @@ function updateStarDisplay(rating) {
     if (!starRow) return;
     const starBtns = starRow.querySelectorAll('.star-pick-btn');
     starBtns.forEach(btn => {
+        btn.classList.remove('hover-active');
         const val = parseInt(btn.getAttribute('data-val'), 10);
-        if (val <= rating) {
+        if (rating > 0 && val <= rating) {
             btn.classList.add('active');
         } else {
             btn.classList.remove('active');
@@ -358,19 +462,46 @@ function highlightStarsUpTo(rating) {
     });
 }
 
-// Auto-fill review name & phone from loyalty tracker results
-function autoFillReviewFromCustomer(name, phone) {
+// Reset all review form fields
+window.resetCustomerReviewForm = function() {
+    const form = document.getElementById('customerReviewForm');
+    if (form) {
+        form.reset();
+    }
     const nameInput = document.getElementById('reviewName');
-    const phoneInput = document.getElementById('reviewPhone');
-    if (nameInput && name && !nameInput.value) {
-        nameInput.value = name;
-    }
-    if (phoneInput && phone && !phoneInput.value) {
-        phoneInput.value = phone;
-    }
-}
+    if (nameInput) nameInput.value = '';
 
-window.submitCustomerReview = function() {
+    const phoneInput = document.getElementById('reviewPhone');
+    if (phoneInput) phoneInput.value = '';
+
+    const ratingInput = document.getElementById('reviewRatingVal');
+    if (ratingInput) ratingInput.value = '';
+
+    updateStarDisplay(0);
+    const ratingText = document.getElementById('starRatingText');
+    if (ratingText) {
+        ratingText.textContent = 'Select a rating';
+        ratingText.classList.add('unselected');
+        ratingText.style.color = 'var(--color-text-muted)';
+    }
+
+    const defaultFav = document.querySelector('input[name="reviewFavorite"][value="Classic – 150 g"]');
+    if (defaultFav) defaultFav.checked = true;
+
+    const commentInput = document.getElementById('reviewComment');
+    if (commentInput) commentInput.value = '';
+
+    const charCountEl = document.getElementById('reviewCharCount');
+    if (charCountEl) charCountEl.textContent = '0 / 500';
+};
+
+let isSubmittingReview = false;
+
+window.submitCustomerReview = async function() {
+    if (isSubmittingReview) {
+        return;
+    }
+
     const nameInput = document.getElementById('reviewName');
     const phoneInput = document.getElementById('reviewPhone');
     const ratingInput = document.getElementById('reviewRatingVal');
@@ -380,13 +511,20 @@ window.submitCustomerReview = function() {
 
     const name = nameInput ? nameInput.value.trim() : '';
     const phone = phoneInput ? phoneInput.value.trim() : '';
-    const rating = ratingInput ? parseInt(ratingInput.value, 10) || 5 : 5;
+    const rating = ratingInput && ratingInput.value ? parseInt(ratingInput.value, 10) : 0;
     const comment = commentInput ? commentInput.value.trim() : '';
-    const favoriteItem = favRadio ? favRadio.value : 'Tiramisu – 150 g';
+    const favoriteItem = favRadio ? favRadio.value : 'Classic – 150 g';
 
     if (!name) {
         showToast('Please enter your name.', 'warning');
         if (nameInput) nameInput.focus();
+        return;
+    }
+
+    if (!rating || rating < 1 || rating > 5) {
+        showToast('Please select a rating for your experience.', 'warning');
+        const starRow = document.getElementById('starRatingRow');
+        if (starRow) starRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
     }
 
@@ -401,13 +539,14 @@ window.submitCustomerReview = function() {
         return;
     }
 
+    isSubmittingReview = true;
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = `<span>Submitting...</span>`;
     }
 
     try {
-        const res = window.TiraDB.addReview({
+        const res = await window.TiraDB.addReview({
             name: name,
             phone: phone,
             rating: rating,
@@ -416,26 +555,35 @@ window.submitCustomerReview = function() {
         });
 
         if (res && res.success) {
+            // Completely reset the review form
+            window.resetCustomerReviewForm();
+
+            let redirected = false;
+            const redirectToReviews = () => {
+                if (!redirected) {
+                    redirected = true;
+                    window.location.href = 'index.html#reviews';
+                }
+            };
+
+            // Fallback timer: automatically redirect after 3.5s if modal is left open
+            const autoRedirectTimer = setTimeout(redirectToReviews, 3500);
+
             if (window.TiraAlert && typeof window.TiraAlert.alert === 'function') {
-                window.TiraAlert.alert({
-                    title: 'Review Published with Love! ❤️',
-                    message: `Thank you, <strong>${window.escapeHtml(name)}</strong>! Your review has been added and will appear on our homepage carousel immediately.`,
-                    type: 'success',
-                    buttonText: 'Awesome!'
-                });
+                try {
+                    const safeName = typeof window.escapeHtml === 'function' ? window.escapeHtml(name) : (typeof escapeHtml === 'function' ? escapeHtml(name) : name);
+                    await window.TiraAlert.alert({
+                        title: 'Review Published with Love! ❤️',
+                        message: `Thank you, <strong>${safeName}</strong>! Your review has been added and will appear on our homepage carousel immediately.`,
+                        type: 'success',
+                        buttonText: 'Awesome!'
+                    });
+                } catch (_) {}
+                clearTimeout(autoRedirectTimer);
+                redirectToReviews();
             } else {
                 showToast('Thank you! Your review has been published to our homepage.', 'success', 'Review Submitted');
-            }
-
-            // Reset comment and form state
-            if (commentInput) commentInput.value = '';
-            const charCountEl = document.getElementById('reviewCharCount');
-            if (charCountEl) charCountEl.textContent = '0 / 500';
-
-            // Scroll gently to confirmation
-            const reviewCard = document.getElementById('reviewSection');
-            if (reviewCard) {
-                reviewCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(redirectToReviews, 1500);
             }
         } else {
             showToast(res.message || 'Error submitting review.', 'error');
@@ -444,6 +592,7 @@ window.submitCustomerReview = function() {
         console.error('Error submitting review:', e);
         showToast('An unexpected error occurred while saving your review.', 'error');
     } finally {
+        isSubmittingReview = false;
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = `<i data-lucide="send" data-size="16"></i> <span>Submit Review</span>`;

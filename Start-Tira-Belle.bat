@@ -5,16 +5,18 @@ echo           TIRA Belle - Little Layers * Big Love
 echo    Tiramisu Sales Management & Customer Loyalty Tracking System
 echo =====================================================================
 echo.
-echo Launching TIRA Belle in your default browser...
+echo Starting TIRA Belle Backend Server (FastAPI + SQLite)...
+start "" python run_server.py
+timeout /t 2 /nobreak >nul
 echo.
-
-start "" "index.html"
-
+echo Launching TIRA Belle in your default browser...
+start "" "http://localhost:8001/index.html"
 echo.
 echo Quick Shortcuts:
-echo - Public Website:         index.html
-echo - Customer Offer Tracker: tracker.html
-echo - Admin Panel:            admin.html  (User: admin / Pass: tirabelle123)
+echo - Storefront:       http://localhost:8001/index.html
+echo - Loyalty Tracker:  http://localhost:8001/tracker.html
+echo - Admin POS Panel:  http://localhost:8001/admin.html
+echo - API Docs:         http://localhost:8001/docs
 echo.
-echo Press any key to exit this window...
+echo Press any key to exit this launcher window (Server will remain running)...
 pause >nul

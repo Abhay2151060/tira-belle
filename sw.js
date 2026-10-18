@@ -3,7 +3,7 @@
  * Provides offline caching, network-resilience, and instant app-like loading.
  */
 
-const CACHE_NAME = 'tira-belle-v6';
+const CACHE_NAME = 'tira-belle-v34';
 
 const STATIC_ASSETS = [
     './',
@@ -21,9 +21,11 @@ const STATIC_ASSETS = [
     './js/qrcode.min.js',
     './manifest.json',
     './assets/tira-belle-logo.png',
-    './assets/tira-belle-poster.jpg',
+    './assets/poster/tiramisu-classic-poster.png',
     './assets/tiramisu-150g.jpg',
     './assets/tiramisu-350g.jpg',
+    './assets/cup-empty.png',
+    './assets/cup-filled.png',
     './assets/icon-192.png',
     './assets/icon-512.png'
 ];
