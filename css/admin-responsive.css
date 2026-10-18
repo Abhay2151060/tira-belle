@@ -15,6 +15,20 @@ body.admin-authenticated .admin-layout {
     grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
 }
 
+body.admin-authenticated .admin-layout.sidebar-collapsed {
+    grid-template-columns: 80px minmax(0, 1fr);
+}
+
+/* The existing tablet breakpoint moves the sidebar off-canvas. Because this
+   stylesheet has more specific authenticated selectors, explicitly preserve
+   that one-column workspace at the same breakpoint. */
+@media (max-width: 992px) {
+    body.admin-authenticated .admin-layout,
+    body.admin-authenticated .admin-layout.sidebar-collapsed {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 body.admin-authenticated .admin-main {
     min-width: 0;
     width: 100%;
@@ -197,15 +211,16 @@ body.admin-authenticated .data-table {
         height: auto;
     }
 
-    body.admin-authenticated .login-overlay {
+    #adminLoginModal {
         padding: max(12px, env(safe-area-inset-top)) 12px
                  max(12px, env(safe-area-inset-bottom));
         overflow-y: auto;
-        align-items: center;
+        align-items: flex-start;
     }
 
-    body.admin-authenticated .login-box {
-        padding: 28px 20px;
+    #adminLoginModal .login-box {
+        padding: 28px 20px !important;
+        margin: auto;
     }
 
     body.admin-authenticated .form-row-2col {
