@@ -1,0 +1,235 @@
+/* ==========================================================================
+   TIRA Belle Admin-Only Responsive Hardening
+   Scoped to the admin portal; public storefront selectors are not modified.
+   ========================================================================== */
+
+/* Keep the admin workspace within the available viewport and let content
+   shrink instead of forcing the whole page to scroll horizontally. */
+body.admin-authenticated {
+    overflow-x: hidden;
+}
+
+body.admin-authenticated .admin-layout {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+}
+
+body.admin-authenticated .admin-main {
+    min-width: 0;
+    width: 100%;
+    max-width: none;
+}
+
+body.admin-authenticated .admin-section,
+body.admin-authenticated .admin-topbar,
+body.admin-authenticated .card,
+body.admin-authenticated .metrics-grid,
+body.admin-authenticated .pos-grid,
+body.admin-authenticated .settings-grid {
+    min-width: 0;
+}
+
+body.admin-authenticated .admin-topbar > *,
+body.admin-authenticated .card-title > * {
+    min-width: 0;
+}
+
+body.admin-authenticated .admin-top-actions {
+    flex-wrap: wrap;
+}
+
+body.admin-authenticated .form-row-2col > *,
+body.admin-authenticated .settings-grid > * {
+    min-width: 0;
+}
+
+/* Data tables keep their own deliberate horizontal scroller; they must not
+   widen the whole admin canvas on tablet or phone screens. */
+body.admin-authenticated .table-responsive {
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+}
+
+body.admin-authenticated .data-table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Tablet and desktop transition range: preserve the current drawer-based
+   navigation while making the content column genuinely shrinkable. */
+@media (min-width: 769px) and (max-width: 1200px) {
+    body.admin-authenticated .admin-main {
+        padding: 24px clamp(16px, 2.4vw, 30px);
+    }
+
+    body.admin-authenticated .admin-topbar {
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    body.admin-authenticated .admin-top-actions {
+        justify-content: flex-end;
+    }
+
+    body.admin-authenticated .metrics-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.admin-authenticated #sec-dashboard .metrics-grid .metric-card:first-child {
+        grid-column: 1 / -1;
+    }
+
+    body.admin-authenticated .pos-grid {
+        grid-template-columns: minmax(0, 1.15fr) minmax(300px, 1fr);
+        gap: 18px;
+    }
+
+    body.admin-authenticated .pos-catalog {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    body.admin-authenticated .pos-cart-panel {
+        min-width: 0;
+    }
+}
+
+/* Mobile admin-only interaction and layout improvements. */
+@media (max-width: 768px) {
+    body.admin-authenticated .admin-mobile-header {
+        position: sticky;
+        top: 0;
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+    }
+
+    body.admin-authenticated .admin-mobile-header .brand-title {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    body.admin-authenticated .admin-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.admin-authenticated .admin-main {
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+    }
+
+    body.admin-authenticated .admin-sidebar {
+        left: 0;
+        transform: translateX(-105%);
+        width: min(290px, calc(100vw - 48px));
+        max-width: calc(100vw - 48px);
+        height: 100vh;
+        height: 100dvh;
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+        visibility: hidden;
+        transition: transform 0.25s ease, visibility 0.25s ease;
+        will-change: transform;
+    }
+
+    body.admin-authenticated .admin-sidebar.mobile-open {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    body.admin-authenticated .admin-sidebar-backdrop {
+        inset: 0;
+        z-index: 105;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+    }
+
+    body.admin-authenticated .admin-sidebar-backdrop.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    body.admin-authenticated .admin-nav-item {
+        min-height: 46px;
+    }
+
+    body.admin-authenticated .admin-topbar {
+        align-items: stretch;
+    }
+
+    body.admin-authenticated .admin-top-actions {
+        align-items: stretch;
+    }
+
+    body.admin-authenticated .admin-top-actions > * {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    body.admin-authenticated .admin-search-row,
+    body.admin-authenticated .customer-filter-bar {
+        min-width: 0;
+    }
+
+    body.admin-authenticated .admin-search-row .btn {
+        min-width: 0;
+    }
+
+    body.admin-authenticated .admin-section .card-title {
+        overflow-wrap: anywhere;
+    }
+
+    body.admin-authenticated .standee-preview {
+        width: 100%;
+        max-width: 480px;
+        padding: 28px 16px;
+        overflow-wrap: anywhere;
+    }
+
+    body.admin-authenticated .standee-qr-box {
+        max-width: 100%;
+        padding: 12px;
+    }
+
+    body.admin-authenticated .standee-qr-box canvas,
+    body.admin-authenticated .standee-qr-box img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    body.admin-authenticated .login-overlay {
+        padding: max(12px, env(safe-area-inset-top)) 12px
+                 max(12px, env(safe-area-inset-bottom));
+        overflow-y: auto;
+        align-items: center;
+    }
+
+    body.admin-authenticated .login-box {
+        padding: 28px 20px;
+    }
+
+    body.admin-authenticated .form-row-2col {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* Narrow phones: keep dashboard cards compact without squeezing text or
+   permitting unintended viewport overflow. */
+@media (max-width: 380px) {
+    body.admin-authenticated .metrics-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    body.admin-authenticated #sec-dashboard .metrics-grid .metric-card:first-child {
+        grid-column: auto;
+    }
+
+    body.admin-authenticated .admin-mobile-header .brand-title {
+        font-size: 1rem;
+    }
+
+    body.admin-authenticated .admin-mobile-menu-btn {
+        padding: 6px 10px;
+    }
+}
+
