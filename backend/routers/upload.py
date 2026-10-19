@@ -1,10 +1,19 @@
 import os
 import uuid
 import re
+import requests
 from pathlib import Path
 from typing import List, Optional
 from fastapi import APIRouter, UploadFile, File, HTTPException, status
-from backend.config import UPLOAD_DIR, MAX_UPLOAD_SIZE, ALLOWED_IMAGE_EXTENSIONS, ALLOWED_IMAGE_MIME_TYPES
+from backend.config import (
+    UPLOAD_DIR,
+    MAX_UPLOAD_SIZE,
+    ALLOWED_IMAGE_EXTENSIONS,
+    ALLOWED_IMAGE_MIME_TYPES,
+    SUPABASE_URL,
+    SUPABASE_KEY,
+    SUPABASE_BUCKET
+)
 
 router = APIRouter(prefix="/api/upload", tags=["Uploads"])
 
@@ -83,15 +92,38 @@ async def upload_image(file: UploadFile = File(...)):
     safe_base = sanitize_filename(file.filename.rsplit(".", 1)[0])
     unique_suffix = uuid.uuid4().hex[:10]
     final_filename = f"{safe_base}_{unique_suffix}.{ext}"
-    destination_path = UPLOAD_DIR / final_filename
 
-    # Ensure uploads directory exists
+    # 6. Upload to Supabase Storage if configured
+    if SUPABASE_URL and SUPABASE_KEY:
+        try:
+            upload_endpoint = f"{SUPABASE_URL}/storage/v1/object/{SUPABASE_BUCKET}/{final_filename}"
+            supabase_headers = {
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "apikey": SUPABASE_KEY,
+                "Content-Type": content_type
+            }
+            resp = requests.post(upload_endpoint, data=contents, headers=supabase_headers, timeout=12)
+            if resp.status_code in (200, 201):
+                public_url = f"{SUPABASE_URL}/storage/v1/object/public/{SUPABASE_BUCKET}/{final_filename}"
+                return {
+                    "success": True,
+                    "url": public_url,
+                    "filename": final_filename,
+                    "size": file_size,
+                    "content_type": content_type
+                }
+            else:
+                print(f"[Supabase Storage] Upload status {resp.status_code}: {resp.text}, using local fallback")
+        except Exception as e:
+            print(f"[Supabase Storage] Upload exception: {e}, using local fallback")
+
+    # Local fallback
+    destination_path = UPLOAD_DIR / final_filename
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
     with open(destination_path, "wb") as f:
         f.write(contents)
 
-    # Return relative URL that works with existing static asset routing
     relative_url = f"assets/uploads/{final_filename}"
 
     return {

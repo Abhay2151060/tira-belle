@@ -28,15 +28,21 @@ from backend.routers import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: ensure tables exist and initial seeds are present
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
     try:
-        seed_initial_data(db)
-    finally:
-        db.close()
+        Base.metadata.create_all(bind=engine)
+        db = SessionLocal()
+        try:
+            seed_initial_data(db)
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"[Warning] Database auto-initialization deferred or failed: {e}")
     yield
     # Shutdown: clean up connection pool
-    engine.dispose()
+    try:
+        engine.dispose()
+    except Exception:
+        pass
 
 app = FastAPI(
     title="TIRA Belle REST API",

@@ -183,12 +183,22 @@ class TiraBelleDB {
         }
     }
 
+    getApiBase() {
+        if (typeof window !== 'undefined' && window.TIRA_API_BASE) {
+            return window.TIRA_API_BASE;
+        }
+        if (typeof window !== 'undefined' && window.location) {
+            // When opened directly via file:// or non-backend dev ports (e.g. Live Server :5500)
+            if (window.location.protocol === 'file:' || (window.location.hostname === 'localhost' && window.location.port !== '8001' && window.location.port !== '')) {
+                return 'http://localhost:8001/api';
+            }
+        }
+        return '/api';
+    }
+
     // ----------------- HYBRID REST API CLIENT -----------------
     async apiRequest(endpoint, options = {}) {
-        const defaultBase = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.includes('8001')) 
-            ? '/api' 
-            : 'http://localhost:8001/api';
-        const url = (window.TIRA_API_BASE || defaultBase) + endpoint;
+        const url = this.getApiBase() + endpoint;
         const headers = {
             'Content-Type': 'application/json',
             ...(options.headers || {})
@@ -775,10 +785,7 @@ class TiraBelleDB {
         const isOnline = await this.checkBackendOnline();
         if (isOnline) {
             try {
-                const defaultBase = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.includes('8001')) 
-                    ? '/api' 
-                    : 'http://localhost:8001/api';
-                const url = (window.TIRA_API_BASE || defaultBase) + '/upload';
+                const url = this.getApiBase() + '/upload';
                 const formData = new FormData();
                 formData.append('file', file);
 

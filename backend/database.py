@@ -4,17 +4,25 @@ from sqlalchemy import create_engine, event
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from backend.config import DATABASE_URL
 
-# For SQLite, configure thread isolation and busy timeout
-connect_args = {}
+engine_kwargs = {
+    "pool_pre_ping": True,
+    "echo": False
+}
+
 if "sqlite" in DATABASE_URL:
-    connect_args["check_same_thread"] = False
-    connect_args["timeout"] = 30  # Wait up to 30s during concurrent transactions
+    engine_kwargs["connect_args"] = {
+        "check_same_thread": False,
+        "timeout": 30
+    }
+else:
+    # PostgreSQL / Supabase serverless settings
+    engine_kwargs["pool_recycle"] = 300
+    engine_kwargs["pool_size"] = 5
+    engine_kwargs["max_overflow"] = 10
 
 engine = create_engine(
     DATABASE_URL,
-    connect_args=connect_args,
-    pool_pre_ping=True,
-    echo=False
+    **engine_kwargs
 )
 
 # Enable SQLite Write-Ahead Logging (WAL) and enforce foreign key constraints

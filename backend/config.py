@@ -7,7 +7,21 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 DB_PATH = (DATA_DIR / "tirabelle.db").as_posix()
 
 # Database
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DB_PATH}")
+raw_db_url = os.getenv("DATABASE_URL", "")
+if not raw_db_url:
+    # Local fallback
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        raw_db_url = f"sqlite:///{(DATA_DIR / 'tirabelle.db').as_posix()}"
+    except (OSError, PermissionError):
+        # Ephemeral serverless fallback (/tmp is writable in serverless)
+        tmp_db = Path("/tmp") / "tirabelle.db"
+        raw_db_url = f"sqlite:///{tmp_db.as_posix()}"
+
+if raw_db_url.startswith("postgres://"):
+    raw_db_url = raw_db_url.replace("postgres://", "postgresql://", 1)
+
+DATABASE_URL = raw_db_url
 
 # Security
 SECRET_KEY = os.getenv("SECRET_KEY", "tirabelle_super_secret_jwt_key_2026_artisan_desserts")
@@ -30,9 +44,19 @@ CORS_ORIGINS = [
     "*"
 ]
 
-# Upload Configuration
-UPLOAD_DIR = BASE_DIR / "assets" / "uploads"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+# Supabase Storage Integration (for persistent cloud uploads)
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
+SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET", "tiramisu-uploads")
+
+# Local Upload Configuration (fallback when Supabase Storage is not set)
+try:
+    UPLOAD_DIR = BASE_DIR / "assets" / "uploads"
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+except (OSError, PermissionError):
+    UPLOAD_DIR = Path("/tmp") / "uploads"
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
 MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5 MB
 ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "webp", "gif"}
 ALLOWED_IMAGE_MIME_TYPES = {
